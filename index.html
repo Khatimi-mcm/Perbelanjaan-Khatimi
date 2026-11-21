@@ -304,7 +304,7 @@
 </div>
 
 <script>
-  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzdYq_fQDEM3XoBOkZT8wc0g5C8tMoDsPjfuJmB70vEhwqFqBmEFc5SU_3EI7h_uxNyjw/exec';
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxte5u7V8sAWs2vKkDz7HvpjLx_0C6G6fM8DyZiWX4B7kDJ8L1zJNcSlXPvJQC7Ym4gXg/exec';
 
   let bilBelanja = 1;
   let cacheRekod = [];
@@ -315,13 +315,6 @@
     document.getElementById('tarikhDari').value = hariIni;
     document.getElementById('tarikhHingga').value = hariIni;
   };
-
-  function semakURL() {
-    if (!WEB_APP_URL || WEB_APP_URL.includes('TAMPAL_URL_WEB_APP')) {
-      return false;
-    }
-    return true;
-  }
 
   function tunjukStatus(idElemen, mesej, jenis = 'ok') {
     const el = document.getElementById(idElemen);
@@ -342,11 +335,48 @@
       : tarikhISO;
   }
 
+  function panggilJSONP(payloadObj) {
+    return new Promise((resolve, reject) => {
+      const namaCallback = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+      const scriptEl = document.createElement('script');
+      const timer = setTimeout(() => {
+        bersih();
+        reject(new Error('Masa tamat sambungan ke Google Sheets.'));
+      }, 15000);
+
+      function bersih() {
+        clearTimeout(timer);
+        if (window[namaCallback]) {
+          delete window[namaCallback];
+        }
+        if (scriptEl && scriptEl.parentNode) {
+          scriptEl.parentNode.removeChild(scriptEl);
+        }
+      }
+
+      window[namaCallback] = function(res) {
+        bersih();
+        if (!res || res.status !== 'ok') {
+          reject(new Error((res && res.message) || 'Ralat dari Google Sheets.'));
+        } else {
+          resolve(res);
+        }
+      };
+
+      const encodedPayload = encodeURIComponent(JSON.stringify(payloadObj));
+      const pemisah = WEB_APP_URL.includes('?') ? '&' : '?';
+      scriptEl.src = `${WEB_APP_URL}${pemisah}callback=${namaCallback}&payload=${encodedPayload}&_=${Date.now()}`;
+      scriptEl.onerror = function() {
+        bersih();
+        reject(new Error('Gagal memuatkan skrip Google Apps Script. Semak tetapan akses Web App.'));
+      };
+      document.body.appendChild(scriptEl);
+    });
+  }
+
   async function panggilSheetsGET() {
-    const res = await fetch(WEB_APP_URL, { method: 'GET', cache: 'no-store' });
-    const json = await res.json();
-    if (json.status !== 'ok') throw new Error(json.message || 'Ralat membaca data.');
-    cacheRekod = (json.data || []).map(r => ({
+    const res = await panggilJSONP({ action: 'list' });
+    cacheRekod = (res.data || []).map(r => ({
       id: String(r.id),
       tarikh: String(r.tarikh),
       item: String(r.item),
@@ -356,13 +386,7 @@
   }
 
   async function panggilSheetsPOST(payload) {
-    await fetch(WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
-    return { status: 'ok' };
+    return await panggilJSONP(payload);
   }
 
   function tambahBelanja() {
@@ -402,11 +426,6 @@
   }
 
   async function simpanRekod() {
-    if (!semakURL()) {
-      tunjukStatus('statusBorang', 'Sila masukkan WEB_APP_URL Google Apps Script dalam kod index.html terlebih dahulu.', 'err');
-      return;
-    }
-
     const tarikh = document.getElementById('tarikh').value;
     if (!tarikh) {
       tunjukStatus('statusBorang', 'Sila pilih tarikh terlebih dahulu.', 'err');
@@ -437,12 +456,12 @@
 
     const btn = document.getElementById('btnSimpan');
     btn.disabled = true;
-    tunjukStatus('statusBorang', 'Menghantar rekod ke Google Sheets...', 'wait');
+    tunjukStatus('statusBorang', 'Menyimpan rekod ke Google Sheets...', 'wait');
 
     try {
       await panggilSheetsPOST({ action: 'add', items: itemUntukDihantar });
       cacheRekod = cacheRekod.concat(itemUntukDihantar);
-      tunjukStatus('statusBorang', `${itemUntukDihantar.length} rekod dihantar ke Google Sheets. Semak Laporan/Sheets untuk sahkan.`);
+      tunjukStatus('statusBorang', `${itemUntukDihantar.length} rekod berjaya disimpan ke Google Sheets.`);
       if (document.getElementById('bahagianLaporan').style.display === 'block') {
         paparJadualLaporan();
       }
@@ -465,11 +484,6 @@
   }
 
   async function segarSemulaDariSheets() {
-    if (!semakURL()) {
-      tunjukStatus('statusLaporan', 'WEB_APP_URL belum ditetapkan dalam kod index.html.', 'err');
-      return;
-    }
-
     const tbody = document.getElementById('isiJadual');
     tbody.innerHTML = `<tr><td colspan="5" class="text-center">Memuatkan data dari Google Sheets...</td></tr>`;
     tunjukStatus('statusLaporan', 'Menyegerakkan data dari Google Sheets...', 'wait');
@@ -639,10 +653,10 @@
         }
 
         tunjukStatus('statusLaporan', 'Mengimport sandaran ke Google Sheets...', 'wait');
-        await panggilSheetsPOST({ action: 'import', items: senaraiMasuk });
+        const hasil = await panggilSheetsPOST({ action: 'import', items: senaraiMasuk });
         await panggilSheetsGET();
         paparJadualLaporan();
-        tunjukStatus('statusLaporan', 'Import ke Sheets dihantar. Jadual telah dikemas kini.');
+        tunjukStatus('statusLaporan', `Import ke Sheets selesai: ${hasil.ditambah} ditambah, ${hasil.dilangkau} bertindih dilangkau.`);
       } catch (err) {
         tunjukStatus('statusLaporan', 'Gagal mengimport fail JSON: ' + err.message, 'err');
       }
@@ -656,7 +670,7 @@
       await panggilSheetsPOST({ action: 'deleteOne', id: idSasaran });
       cacheRekod = cacheRekod.filter(r => String(r.id) !== String(idSasaran));
       paparJadualLaporan();
-      tunjukStatus('statusLaporan', 'Permintaan padam baris dihantar ke Google Sheets.');
+      tunjukStatus('statusLaporan', 'Satu baris rekod telah dipadam daripada Google Sheets.');
     } catch (err) {
       tunjukStatus('statusLaporan', 'Gagal memadam rekod: ' + err.message, 'err');
     }
@@ -665,10 +679,14 @@
   async function buangDataBertindih() {
     tunjukStatus('statusLaporan', 'Menyemak data bertindih dalam Google Sheets...', 'wait');
     try {
-      await panggilSheetsPOST({ action: 'dedup' });
+      const hasil = await panggilSheetsPOST({ action: 'dedup' });
+      if (hasil.bertindih === 0) {
+        tunjukStatus('statusLaporan', 'Tiada data bertindih ditemui.');
+        return;
+      }
       await panggilSheetsGET();
       paparJadualLaporan();
-      tunjukStatus('statusLaporan', 'Proses buang data bertindih selesai.');
+      tunjukStatus('statusLaporan', `${hasil.bertindih} rekod bertindih telah dibuang daripada Google Sheets.`);
     } catch (err) {
       tunjukStatus('statusLaporan', 'Gagal mengemas kini rekod: ' + err.message, 'err');
     }
@@ -690,10 +708,14 @@
 
     tunjukStatus('statusLaporan', `Memadam rekod dari ${dari} hingga ${hingga}...`, 'wait');
     try {
-      await panggilSheetsPOST({ action: 'deleteRange', dari: dari, hingga: hingga });
+      const hasil = await panggilSheetsPOST({ action: 'deleteRange', dari: dari, hingga: hingga });
+      if (hasil.dipadam === 0) {
+        tunjukStatus('statusLaporan', `Tiada rekod ditemui dari ${dari} hingga ${hingga} untuk dipadam.`, 'err');
+        return;
+      }
       await panggilSheetsGET();
       paparJadualLaporan();
-      tunjukStatus('statusLaporan', `Permintaan padam rekod (${dari} hingga ${hingga}) dihantar.`);
+      tunjukStatus('statusLaporan', `${hasil.dipadam} rekod dari ${dari} hingga ${hingga} telah dipadam daripada Google Sheets.`);
     } catch (err) {
       tunjukStatus('statusLaporan', 'Gagal memadam rekod: ' + err.message, 'err');
     }
