@@ -328,11 +328,32 @@
     }
   }
 
+  function normalisasiTarikhISO(nilai) {
+    if (!nilai) return '';
+    const str = String(nilai).trim();
+    const matchISO = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (matchISO) {
+      const yyyy = matchISO[1];
+      const mm = matchISO[2].padStart(2, '0');
+      const dd = matchISO[3].padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    const matchDMY = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (matchDMY) {
+      const dd = matchDMY[1].padStart(2, '0');
+      const mm = matchDMY[2].padStart(2, '0');
+      const yyyy = matchDMY[3];
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return str;
+  }
+
   function formatTarikhRingkas(tarikhISO) {
-    const bahagian = String(tarikhISO).split('-');
+    const iso = normalisasiTarikhISO(tarikhISO);
+    const bahagian = iso.split('-');
     return bahagian.length === 3
       ? `${bahagian[2]}/${bahagian[1]}/${bahagian[0].slice(2)}`
-      : tarikhISO;
+      : iso;
   }
 
   function panggilJSONP(payloadObj) {
@@ -378,7 +399,7 @@
     const res = await panggilJSONP({ action: 'list' });
     cacheRekod = (res.data || []).map(r => ({
       id: String(r.id),
-      tarikh: String(r.tarikh),
+      tarikh: normalisasiTarikhISO(r.tarikh),
       item: String(r.item),
       amaun: Number(r.amaun) || 0
     }));
@@ -426,7 +447,7 @@
   }
 
   async function simpanRekod() {
-    const tarikh = document.getElementById('tarikh').value;
+    const tarikh = normalisasiTarikhISO(document.getElementById('tarikh').value);
     if (!tarikh) {
       tunjukStatus('statusBorang', 'Sila pilih tarikh terlebih dahulu.', 'err');
       return;
@@ -499,13 +520,14 @@
   }
 
   function dapatRekodDitapis() {
-    const dari = document.getElementById('tarikhDari').value;
-    const hingga = document.getElementById('tarikhHingga').value;
+    const dari = normalisasiTarikhISO(document.getElementById('tarikhDari').value);
+    const hingga = normalisasiTarikhISO(document.getElementById('tarikhHingga').value);
     const kataKunci = document.getElementById('carianItem').value.trim().toLowerCase();
 
     return cacheRekod.filter(r => {
-      if (dari && r.tarikh < dari) return false;
-      if (hingga && r.tarikh > hingga) return false;
+      const tarikhRekod = normalisasiTarikhISO(r.tarikh);
+      if (dari && tarikhRekod < dari) return false;
+      if (hingga && tarikhRekod > hingga) return false;
       if (kataKunci && !String(r.item).toLowerCase().includes(kataKunci)) return false;
       return true;
     });
@@ -550,8 +572,8 @@
   }
 
   function salinTeksLaporan() {
-    const dari = document.getElementById('tarikhDari').value || '-';
-    const hingga = document.getElementById('tarikhHingga').value || '-';
+    const dari = normalisasiTarikhISO(document.getElementById('tarikhDari').value) || '-';
+    const hingga = normalisasiTarikhISO(document.getElementById('tarikhHingga').value) || '-';
     const kataKunci = document.getElementById('carianItem').value.trim();
     const rekodDitapis = dapatRekodDitapis();
 
@@ -693,8 +715,8 @@
   }
 
   async function padamRekodMengikutTarikh() {
-    const dari = document.getElementById('tarikhDari').value;
-    const hingga = document.getElementById('tarikhHingga').value;
+    const dari = normalisasiTarikhISO(document.getElementById('tarikhDari').value);
+    const hingga = normalisasiTarikhISO(document.getElementById('tarikhHingga').value);
 
     if (!dari || !hingga) {
       tunjukStatus('statusLaporan', 'Sila pilih tarikh Dari dan Hingga terlebih dahulu.', 'err');
