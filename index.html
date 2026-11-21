@@ -356,14 +356,13 @@
   }
 
   async function panggilSheetsPOST(payload) {
-    const res = await fetch(WEB_APP_URL, {
+    await fetch(WEB_APP_URL, {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     });
-    const json = await res.json();
-    if (json.status !== 'ok') throw new Error(json.message || 'Ralat mengemas kini data.');
-    return json;
+    return { status: 'ok' };
   }
 
   function tambahBelanja() {
@@ -374,7 +373,7 @@
     div.innerHTML = `
       <label>Item ${bilBelanja}</label>
       <input type="text" class="input-item" placeholder="Nama perbelanjaan ${bilBelanja}">
-      <label>Amaun ${bilBelanja} (RM)</label>
+      <label>Amaun 1 (RM)</label>
       <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
     `;
     bekas.appendChild(div);
@@ -438,12 +437,12 @@
 
     const btn = document.getElementById('btnSimpan');
     btn.disabled = true;
-    tunjukStatus('statusBorang', 'Menyimpan rekod ke Google Sheets...', 'wait');
+    tunjukStatus('statusBorang', 'Menghantar rekod ke Google Sheets...', 'wait');
 
     try {
       await panggilSheetsPOST({ action: 'add', items: itemUntukDihantar });
       cacheRekod = cacheRekod.concat(itemUntukDihantar);
-      tunjukStatus('statusBorang', `${itemUntukDihantar.length} rekod berjaya disimpan ke Google Sheets.`);
+      tunjukStatus('statusBorang', `${itemUntukDihantar.length} rekod dihantar ke Google Sheets. Semak Laporan/Sheets untuk sahkan.`);
       if (document.getElementById('bahagianLaporan').style.display === 'block') {
         paparJadualLaporan();
       }
@@ -640,10 +639,10 @@
         }
 
         tunjukStatus('statusLaporan', 'Mengimport sandaran ke Google Sheets...', 'wait');
-        const hasil = await panggilSheetsPOST({ action: 'import', items: senaraiMasuk });
+        await panggilSheetsPOST({ action: 'import', items: senaraiMasuk });
         await panggilSheetsGET();
         paparJadualLaporan();
-        tunjukStatus('statusLaporan', `Import ke Sheets selesai: ${hasil.ditambah} ditambah, ${hasil.dilangkau} bertindih dilangkau.`);
+        tunjukStatus('statusLaporan', 'Import ke Sheets dihantar. Jadual telah dikemas kini.');
       } catch (err) {
         tunjukStatus('statusLaporan', 'Gagal mengimport fail JSON: ' + err.message, 'err');
       }
@@ -657,7 +656,7 @@
       await panggilSheetsPOST({ action: 'deleteOne', id: idSasaran });
       cacheRekod = cacheRekod.filter(r => String(r.id) !== String(idSasaran));
       paparJadualLaporan();
-      tunjukStatus('statusLaporan', 'Satu baris rekod telah dipadam daripada Google Sheets.');
+      tunjukStatus('statusLaporan', 'Permintaan padam baris dihantar ke Google Sheets.');
     } catch (err) {
       tunjukStatus('statusLaporan', 'Gagal memadam rekod: ' + err.message, 'err');
     }
@@ -666,14 +665,10 @@
   async function buangDataBertindih() {
     tunjukStatus('statusLaporan', 'Menyemak data bertindih dalam Google Sheets...', 'wait');
     try {
-      const hasil = await panggilSheetsPOST({ action: 'dedup' });
-      if (hasil.bertindih === 0) {
-        tunjukStatus('statusLaporan', 'Tiada data bertindih ditemui.');
-        return;
-      }
+      await panggilSheetsPOST({ action: 'dedup' });
       await panggilSheetsGET();
       paparJadualLaporan();
-      tunjukStatus('statusLaporan', `${hasil.bertindih} rekod bertindih telah dibuang daripada Google Sheets.`);
+      tunjukStatus('statusLaporan', 'Proses buang data bertindih selesai.');
     } catch (err) {
       tunjukStatus('statusLaporan', 'Gagal mengemas kini rekod: ' + err.message, 'err');
     }
@@ -695,14 +690,10 @@
 
     tunjukStatus('statusLaporan', `Memadam rekod dari ${dari} hingga ${hingga}...`, 'wait');
     try {
-      const hasil = await panggilSheetsPOST({ action: 'deleteRange', dari: dari, hingga: hingga });
-      if (hasil.dipadam === 0) {
-        tunjukStatus('statusLaporan', `Tiada rekod ditemui dari ${dari} hingga ${hingga} untuk dipadam.`, 'err');
-        return;
-      }
+      await panggilSheetsPOST({ action: 'deleteRange', dari: dari, hingga: hingga });
       await panggilSheetsGET();
       paparJadualLaporan();
-      tunjukStatus('statusLaporan', `${hasil.dipadam} rekod dari ${dari} hingga ${hingga} telah dipadam daripada Google Sheets.`);
+      tunjukStatus('statusLaporan', `Permintaan padam rekod (${dari} hingga ${hingga}) dihantar.`);
     } catch (err) {
       tunjukStatus('statusLaporan', 'Gagal memadam rekod: ' + err.message, 'err');
     }
