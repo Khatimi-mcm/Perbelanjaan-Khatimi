@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rekod & Laporan Perbelanjaan</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f4f6f8;
+    color: #1c1e21;
+    margin: 0;
+    padding: 16px;
+  }
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  h2 {
+    font-size: 16px;
+    text-transform: uppercase;
+    color: #0d6efd;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 6px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+  }
+  h2:first-child { margin-top: 0; }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #495057;
+  }
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background-color: #fff;
+  }
+  input:focus {
+    outline: none;
+    border-color: #0d6efd;
+  }
+  .item-box {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #e9ecef;
+  }
+  .btn-plus {
+    width: 100%;
+    padding: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #0d6efd;
+    background-color: #e7f1ff;
+    border: 1px dashed #0d6efd;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 12px;
+  }
+  .btn-plus:active { background-color: #cfe2ff; }
+
+  .summary-box {
+    background: #e7f1ff;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 16px;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .jumlah-belanja {
+    font-size: 18px;
+    font-weight: bold;
+    color: #0a58ca;
+  }
+
+  .btn-action {
+    width: 100%;
+    padding: 13px;
+    margin-top: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .btn-save { background-color: #198754; }
+  .btn-reset { background-color: #6c757d; }
+  .btn-report { background-color: #0d6efd; }
+
+  #bahagianLaporan {
+    display: none;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px dashed #dee2e6;
+  }
+  .filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  th, td {
+    border: 1px solid #dee2e6;
+    padding: 8px 6px;
+    text-align: left;
+  }
+  th {
+    background-color: #f1f3f5;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .total-row {
+    font-weight: bold;
+    background-color: #e7f1ff;
+  }
+  .btn-dedup {
+    background-color: #fd7e14;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+  .btn-delete-range {
+    background-color: #dc3545;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .btn-del-row {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 4px;
+  }
+  .status-box {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: none;
+  }
+  .status-ok {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    display: block;
+  }
+  .status-err {
+    background-color: #f8d7da;
+    color: #842029;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <label for="tarikh">TARIKH</label>
+  <input type="date" id="tarikh">
+
+  <h2>Perbelanjaan</h2>
+  <div id="senaraiBelanja">
+    <div class="item-box belanja-group">
+      <label>Item 1</label>
+      <input type="text" class="input-item" placeholder="Nama perbelanjaan 1">
+      <label>Amaun 1 (RM)</label>
+      <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
+    </div>
+  </div>
+  <button type="button" class="btn-plus" onclick="tambahBelanja()">+</button>
+
+  <div class="summary-box">
+    <div class="row jumlah-belanja">
+      <span>JUMLAH BELANJA:</span>
+      <span id="paparBelanja">RM 0.00</span>
+    </div>
+  </div>
+
+  <button type="button" class="btn-action btn-save" onclick="simpanRekod()">Simpan Rekod</button>
+  <button type="button" class="btn-action btn-reset" onclick="resetBorang()">Kosongkan Semua</button>
+  <button type="button" class="btn-action btn-report" onclick="bukaLaporan()">Laporan</button>
+
+  <div id="statusBorang" class="status-box"></div>
+
+  <div id="bahagianLaporan">
+    <h2>Laporan Perbelanjaan</h2>
+
+    <div class="filter-grid">
+      <div>
+        <label for="tarikhDari">Dari</label>
+        <input type="date" id="tarikhDari" onchange="paparJadualLaporan()">
+      </div>
+      <div>
+        <label for="tarikhHingga">Hingga</label>
+        <input type="date" id="tarikhHingga" onchange="paparJadualLaporan()">
+      </div>
+    </div>
+
+    <label for="carianItem">Carian Perkataan / Item</label>
+    <input type="text" id="carianItem" placeholder="Taip perkataan untuk tapis rekod..." oninput="paparJadualLaporan()">
+
+    <table>
+      <thead>
+        <tr>
+          <th class="text-center" style="width: 10%;">Bil.</th>
+          <th style="width: 24%;">Tarikh</th>
+          <th style="width: 34%;">Item</th>
+          <th class="text-right" style="width: 22%;">Amaun</th>
+          <th class="text-center" style="width: 10%;">Buang</th>
+        </tr>
+      </thead>
+      <tbody id="isiJadual"></tbody>
+    </table>
+
+    <button type="button" class="btn-action btn-dedup" onclick="buangDataBertindih()">
+      Buang Data Bertindih
+    </button>
+
+    <button type="button" class="btn-action btn-delete-range" onclick="padamRekodMengikutTarikh()">
+      Padam Rekod (Dari - Hingga)
+    </button>
+
+    <div id="statusLaporan" class="status-box"></div>
+  </div>
+</div>
+
+<script>
+  const KUNCI_SIMPANAN = 'rekodPerbelanjaan_v1';
+  let bilBelanja = 1;
+
+  window.onload = function() {
+    const hariIni = new Date().toISOString().split('T')[0];
+    document.getElementById('tarikh').value = hariIni;
+    document.getElementById('tarikhDari').value = hariIni;
+    document.getElementById('tarikhHingga').value = hariIni;
+  };
+
+  function muatRekod() {
+    try {
+      const mentah = localStorage.getItem(KUNCI_SIMPANAN);
+      const senarai = mentah ? JSON.parse(mentah) : [];
+      return senarai.map((r, idx) => ({
+        id: r.id || (Date.now() + idx + Math.random()),
+        tarikh: r.tarikh,
+        item: r.item,
+        amaun: Number(r.amaun) || 0
+      }));
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function simpanSenaraiRekod(senarai) {
+    try {
+      localStorage.setItem(KUNCI_SIMPANAN, JSON.stringify(senarai));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function tunjukStatus(idElemen, mesej, adalahRalat = false) {
+    const el = document.getElementById(idElemen);
+    el.textContent = mesej;
+    el.className = 'status-box ' + (adalahRalat ? 'status-err' : 'status-ok');
+  }
+
+  function tambahBelanja() {
+    bilBelanja++;
+    const bekas = document.getElementById('senaraiBelanja');
+    const div = document.createElement('div');
+    div.className = 'item-box belanja-group';
+    div.innerHTML = `
+      <label>Item ${bilBelanja}</label>
+      <input type="text" class="input-item" placeholder="Nama perbelanjaan ${bilBelanja}">
+      <label>Amaun ${bilBelanja} (RM)</label>
+      <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
+    `;
+    bekas.appendChild(div);
+  }
+
+  function kira() {
+    let jumlahBelanja = 0;
+    document.querySelectorAll('.input-amaun').forEach(input => {
+      jumlahBelanja += parseFloat(input.value) || 0;
+    });
+    document.getElementById('paparBelanja').innerText = 'RM ' + jumlahBelanja.toFixed(2);
+  }
+
+  function resetBorang() {
+    bilBelanja = 1;
+    document.getElementById('senaraiBelanja').innerHTML = `
+      <div class="item-box belanja-group">
+        <label>Item 1</label>
+        <input type="text" class="input-item" placeholder="Nama perbelanjaan 1">
+        <label>Amaun 1 (RM)</label>
+        <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
+      </div>
+    `;
+    kira();
+    tunjukStatus('statusBorang', 'Borang telah dikosongkan.');
+  }
+
+  function simpanRekod() {
+    const tarikh = document.getElementById('tarikh').value;
+    if (!tarikh) {
+      tunjukStatus('statusBorang', 'Sila pilih tarikh terlebih dahulu.', true);
+      return;
+    }
+
+    const kumpulanBelanja = document.querySelectorAll('.belanja-group');
+    let rekodSediaAda = muatRekod();
+    let adaData = false;
+
+    kumpulanBelanja.forEach(kumpulan => {
+      const namaItem = kumpulan.querySelector('.input-item').value.trim();
+      const amaun = parseFloat(kumpulan.querySelector('.input-amaun').value) || 0;
+
+      if (namaItem !== '' || amaun > 0) {
+        rekodSediaAda.push({
+          id: Date.now() + Math.random(),
+          tarikh: tarikh,
+          item: namaItem || 'Perbelanjaan Tanpa Nama',
+          amaun: amaun
+        });
+        adaData = true;
+      }
+    });
+
+    if (!adaData) {
+      tunjukStatus('statusBorang', 'Tiada item atau amaun diisi untuk disimpan.', true);
+      return;
+    }
+
+    const berjaya = simpanSenaraiRekod(rekodSediaAda);
+    if (berjaya) {
+      tunjukStatus('statusBorang', 'Rekod berjaya disimpan.');
+      if (document.getElementById('bahagianLaporan').style.display === 'block') {
+        paparJadualLaporan();
+      }
+    } else {
+      tunjukStatus('statusBorang', 'Gagal menyimpan rekod (semak tetapan penyimpanan pelayar).', true);
+    }
+  }
+
+  function bukaLaporan() {
+    const bahagian = document.getElementById('bahagianLaporan');
+    if (bahagian.style.display === 'none' || bahagian.style.display === '') {
+      bahagian.style.display = 'block';
+      paparJadualLaporan();
+      bahagian.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      bahagian.style.display = 'none';
+    }
+  }
+
+  function paparJadualLaporan() {
+    const dari = document.getElementById('tarikhDari').value;
+    const hingga = document.getElementById('tarikhHingga').value;
+    const kataKunci = document.getElementById('carianItem').value.trim().toLowerCase();
+    const rekod = muatRekod();
+    const tbody = document.getElementById('isiJadual');
+    tbody.innerHTML = '';
+
+    const rekodDitapis = rekod.filter(r => {
+      if (dari && r.tarikh < dari) return false;
+      if (hingga && r.tarikh > hingga) return false;
+      if (kataKunci && !String(r.item).toLowerCase().includes(kataKunci)) return false;
+      return true;
+    });
+
+    if (rekodDitapis.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center">Tiada rekod ditemui.</td></tr>`;
+      return;
+    }
+
+    let jumlahKeseluruhan = 0;
+
+    rekodDitapis.forEach((r, index) => {
+      jumlahKeseluruhan += Number(r.amaun) || 0;
+      const bahagianTarikh = String(r.tarikh).split('-');
+      const tarikhRingkas = bahagianTarikh.length === 3
+        ? `${bahagianTarikh[2]}/${bahagianTarikh[1]}/${bahagianTarikh[0].slice(2)}`
+        : r.tarikh;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="text-center">${index + 1}</td>
+        <td>${tarikhRingkas}</td>
+        <td>${r.item}</td>
+        <td class="text-right">${(Number(r.amaun) || 0).toFixed(2)}</td>
+        <td class="text-center"><button type="button" class="btn-del-row" onclick="padamSatuRekod(${r.id})">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const trJumlah = document.createElement('tr');
+    trJumlah.className = 'total-row';
+    trJumlah.innerHTML = `
+      <td colspan="3" class="text-right">JUMLAH</td>
+      <td class="text-right">${jumlahKeseluruhan.toFixed(2)}</td>
+      <td></td>
+    `;
+    tbody.appendChild(trJumlah);
+  }
+
+  function padamSatuRekod(idSasaran) {
+    const rekod = muatRekod();
+    const rekodKekal = rekod.filter(r => r.id !== idSasaran);
+    if (simpanSenaraiRekod(rekodKekal)) {
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', 'Satu baris rekod telah dipadam.');
+    }
+  }
+
+  function buangDataBertindih() {
+    const rekod = muatRekod();
+    const kunciDilihat = new Set();
+    const rekodUnik = [];
+    let jumlahBertindih = 0;
+
+    rekod.forEach(r => {
+      const kunci = `${r.tarikh}|${String(r.item).trim().toLowerCase()}|${(Number(r.amaun) || 0).toFixed(2)}`;
+      if (kunciDilihat.has(kunci)) {
+        jumlahBertindih++;
+      } else {
+        kunciDilihat.add(kunci);
+        rekodUnik.push(r);
+      }
+    });
+
+    if (jumlahBertindih === 0) {
+      tunjukStatus('statusLaporan', 'Tiada data bertindih ditemui.');
+      return;
+    }
+
+    if (simpanSenaraiRekod(rekodUnik)) {
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', `${jumlahBertindih} rekod bertindih telah dibuang.`);
+    } else {
+      tunjukStatus('statusLaporan', 'Gagal mengemas kini rekod.', true);
+    }
+  }
+
+  function padamRekodMengikutTarikh() {
+    const dari = document.getElementById('tarikhDari').value;
+    const hingga = document.getElementById('tarikhHingga').value;
+
+    if (!dari || !hingga) {
+      tunjukStatus('statusLaporan', 'Sila pilih tarikh Dari dan Hingga terlebih dahulu.', true);
+      return;
+    }
+
+    if (dari > hingga) {
+      tunjukStatus('statusLaporan', 'Tarikh Dari tidak boleh melebihi tarikh Hingga.', true);
+      return;
+    }
+
+    const rekod = muatRekod();
+    const rekodKekal = rekod.filter(r => r.tarikh < dari || r.tarikh > hingga);
+    const jumlahDipadam = rekod.length - rekodKekal.length;
+
+    if (jumlahDipadam === 0) {
+      tunjukStatus('statusLaporan', `Tiada rekod ditemui dari ${dari} hingga ${hingga} untuk dipadam.`, true);
+      return;
+    }
+
+    if (simpanSenaraiRekod(rekodKekal)) {
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', `${jumlahDipadam} rekod dari ${dari} hingga ${hingga} telah dipadam.`);
+    } else {
+      tunjukStatus('statusLaporan', 'Gagal memadam rekod daripada penyimpanan pelayar.', true);
+    }
+  }
+</script>
+
+</body>
+</html>
