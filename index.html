@@ -100,6 +100,10 @@
     border-radius: 8px;
     cursor: pointer;
   }
+  .btn-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
   .btn-save { background-color: #198754; }
   .btn-reset { background-color: #6c757d; }
   .btn-report { background-color: #0d6efd; }
@@ -138,6 +142,31 @@
     font-weight: bold;
     background-color: #e7f1ff;
   }
+  .btn-refresh {
+    background-color: #0d6efd;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  .btn-copy {
+    background-color: #0dcaf0;
+    color: #000;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+  .btn-export {
+    background-color: #198754;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .btn-import {
+    background-color: #6610f2;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 8px;
+  }
   .btn-dedup {
     background-color: #fd7e14;
     padding: 11px;
@@ -166,6 +195,7 @@
     font-size: 13px;
     font-weight: 600;
     display: none;
+    white-space: pre-line;
   }
   .status-ok {
     background-color: #d1e7dd;
@@ -175,6 +205,11 @@
   .status-err {
     background-color: #f8d7da;
     color: #842029;
+    display: block;
+  }
+  .status-wait {
+    background-color: #fff3cd;
+    color: #664d03;
     display: block;
   }
 </style>
@@ -203,7 +238,7 @@
     </div>
   </div>
 
-  <button type="button" class="btn-action btn-save" onclick="simpanRekod()">Simpan Rekod</button>
+  <button type="button" id="btnSimpan" class="btn-action btn-save" onclick="simpanRekod()">Simpan Rekod</button>
   <button type="button" class="btn-action btn-reset" onclick="resetBorang()">Kosongkan Semua</button>
   <button type="button" class="btn-action btn-report" onclick="bukaLaporan()">Laporan</button>
 
@@ -226,6 +261,10 @@
     <label for="carianItem">Carian Perkataan / Item</label>
     <input type="text" id="carianItem" placeholder="Taip perkataan untuk tapis rekod..." oninput="paparJadualLaporan()">
 
+    <button type="button" class="btn-action btn-refresh" onclick="segarSemulaDariSheets()">
+      Muat Semula Data Google Sheets
+    </button>
+
     <table>
       <thead>
         <tr>
@@ -238,6 +277,19 @@
       </thead>
       <tbody id="isiJadual"></tbody>
     </table>
+
+    <button type="button" class="btn-action btn-copy" onclick="salinTeksLaporan()">
+      Salin Teks Laporan
+    </button>
+
+    <button type="button" class="btn-action btn-export" onclick="eksportSandaranJSON()">
+      Eksport Sandaran (.JSON)
+    </button>
+
+    <button type="button" class="btn-action btn-import" onclick="bukaPemilihFailImport()">
+      Import Sandaran (.JSON) ke Sheets
+    </button>
+    <input type="file" id="failImportJSON" accept=".json,application/json" style="display: none;" onchange="importSandaranJSON(event)">
 
     <button type="button" class="btn-action btn-dedup" onclick="buangDataBertindih()">
       Buang Data Bertindih
@@ -252,8 +304,10 @@
 </div>
 
 <script>
-  const KUNCI_SIMPANAN = 'rekodPerbelanjaan_v1';
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzdYq_fQDEM3XoBOkZT8wc0g5C8tMoDsPjfuJmB70vEhwqFqBmEFc5SU_3EI7h_uxNyjw/exec';
+
   let bilBelanja = 1;
+  let cacheRekod = [];
 
   window.onload = function() {
     const hariIni = new Date().toISOString().split('T')[0];
@@ -262,34 +316,54 @@
     document.getElementById('tarikhHingga').value = hariIni;
   };
 
-  function muatRekod() {
-    try {
-      const mentah = localStorage.getItem(KUNCI_SIMPANAN);
-      const senarai = mentah ? JSON.parse(mentah) : [];
-      return senarai.map((r, idx) => ({
-        id: r.id || (Date.now() + idx + Math.random()),
-        tarikh: r.tarikh,
-        item: r.item,
-        amaun: Number(r.amaun) || 0
-      }));
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function simpanSenaraiRekod(senarai) {
-    try {
-      localStorage.setItem(KUNCI_SIMPANAN, JSON.stringify(senarai));
-      return true;
-    } catch (e) {
+  function semakURL() {
+    if (!WEB_APP_URL || WEB_APP_URL.includes('TAMPAL_URL_WEB_APP')) {
       return false;
     }
+    return true;
   }
 
-  function tunjukStatus(idElemen, mesej, adalahRalat = false) {
+  function tunjukStatus(idElemen, mesej, jenis = 'ok') {
     const el = document.getElementById(idElemen);
     el.textContent = mesej;
-    el.className = 'status-box ' + (adalahRalat ? 'status-err' : 'status-ok');
+    if (jenis === 'err') {
+      el.className = 'status-box status-err';
+    } else if (jenis === 'wait') {
+      el.className = 'status-box status-wait';
+    } else {
+      el.className = 'status-box status-ok';
+    }
+  }
+
+  function formatTarikhRingkas(tarikhISO) {
+    const bahagian = String(tarikhISO).split('-');
+    return bahagian.length === 3
+      ? `${bahagian[2]}/${bahagian[1]}/${bahagian[0].slice(2)}`
+      : tarikhISO;
+  }
+
+  async function panggilSheetsGET() {
+    const res = await fetch(WEB_APP_URL, { method: 'GET', cache: 'no-store' });
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message || 'Ralat membaca data.');
+    cacheRekod = (json.data || []).map(r => ({
+      id: String(r.id),
+      tarikh: String(r.tarikh),
+      item: String(r.item),
+      amaun: Number(r.amaun) || 0
+    }));
+    return cacheRekod;
+  }
+
+  async function panggilSheetsPOST(payload) {
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message || 'Ralat mengemas kini data.');
+    return json;
   }
 
   function tambahBelanja() {
@@ -328,73 +402,107 @@
     tunjukStatus('statusBorang', 'Borang telah dikosongkan.');
   }
 
-  function simpanRekod() {
+  async function simpanRekod() {
+    if (!semakURL()) {
+      tunjukStatus('statusBorang', 'Sila masukkan WEB_APP_URL Google Apps Script dalam kod index.html terlebih dahulu.', 'err');
+      return;
+    }
+
     const tarikh = document.getElementById('tarikh').value;
     if (!tarikh) {
-      tunjukStatus('statusBorang', 'Sila pilih tarikh terlebih dahulu.', true);
+      tunjukStatus('statusBorang', 'Sila pilih tarikh terlebih dahulu.', 'err');
       return;
     }
 
     const kumpulanBelanja = document.querySelectorAll('.belanja-group');
-    let rekodSediaAda = muatRekod();
-    let adaData = false;
+    const itemUntukDihantar = [];
 
-    kumpulanBelanja.forEach(kumpulan => {
+    kumpulanBelanja.forEach((kumpulan, idx) => {
       const namaItem = kumpulan.querySelector('.input-item').value.trim();
       const amaun = parseFloat(kumpulan.querySelector('.input-amaun').value) || 0;
 
       if (namaItem !== '' || amaun > 0) {
-        rekodSediaAda.push({
-          id: Date.now() + Math.random(),
+        itemUntukDihantar.push({
+          id: `${Date.now()}-${idx}-${Math.floor(Math.random() * 10000)}`,
           tarikh: tarikh,
           item: namaItem || 'Perbelanjaan Tanpa Nama',
           amaun: amaun
         });
-        adaData = true;
       }
     });
 
-    if (!adaData) {
-      tunjukStatus('statusBorang', 'Tiada item atau amaun diisi untuk disimpan.', true);
+    if (itemUntukDihantar.length === 0) {
+      tunjukStatus('statusBorang', 'Tiada item atau amaun diisi untuk disimpan.', 'err');
       return;
     }
 
-    const berjaya = simpanSenaraiRekod(rekodSediaAda);
-    if (berjaya) {
-      tunjukStatus('statusBorang', 'Rekod berjaya disimpan.');
+    const btn = document.getElementById('btnSimpan');
+    btn.disabled = true;
+    tunjukStatus('statusBorang', 'Menyimpan rekod ke Google Sheets...', 'wait');
+
+    try {
+      await panggilSheetsPOST({ action: 'add', items: itemUntukDihantar });
+      cacheRekod = cacheRekod.concat(itemUntukDihantar);
+      tunjukStatus('statusBorang', `${itemUntukDihantar.length} rekod berjaya disimpan ke Google Sheets.`);
       if (document.getElementById('bahagianLaporan').style.display === 'block') {
         paparJadualLaporan();
       }
-    } else {
-      tunjukStatus('statusBorang', 'Gagal menyimpan rekod (semak tetapan penyimpanan pelayar).', true);
+    } catch (err) {
+      tunjukStatus('statusBorang', 'Gagal menyimpan ke Google Sheets: ' + err.message, 'err');
+    } finally {
+      btn.disabled = false;
     }
   }
 
-  function bukaLaporan() {
+  async function bukaLaporan() {
     const bahagian = document.getElementById('bahagianLaporan');
     if (bahagian.style.display === 'none' || bahagian.style.display === '') {
       bahagian.style.display = 'block';
-      paparJadualLaporan();
       bahagian.scrollIntoView({ behavior: 'smooth' });
+      await segarSemulaDariSheets();
     } else {
       bahagian.style.display = 'none';
     }
   }
 
-  function paparJadualLaporan() {
+  async function segarSemulaDariSheets() {
+    if (!semakURL()) {
+      tunjukStatus('statusLaporan', 'WEB_APP_URL belum ditetapkan dalam kod index.html.', 'err');
+      return;
+    }
+
+    const tbody = document.getElementById('isiJadual');
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center">Memuatkan data dari Google Sheets...</td></tr>`;
+    tunjukStatus('statusLaporan', 'Menyegerakkan data dari Google Sheets...', 'wait');
+
+    try {
+      await panggilSheetsGET();
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', `Data terkini dimuatkan (${cacheRekod.length} jumlah rekod dalam Sheets).`);
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center">Gagal memuatkan data.</td></tr>`;
+      tunjukStatus('statusLaporan', 'Ralat sambungan Google Sheets: ' + err.message, 'err');
+    }
+  }
+
+  function dapatRekodDitapis() {
     const dari = document.getElementById('tarikhDari').value;
     const hingga = document.getElementById('tarikhHingga').value;
     const kataKunci = document.getElementById('carianItem').value.trim().toLowerCase();
-    const rekod = muatRekod();
-    const tbody = document.getElementById('isiJadual');
-    tbody.innerHTML = '';
 
-    const rekodDitapis = rekod.filter(r => {
+    return cacheRekod.filter(r => {
       if (dari && r.tarikh < dari) return false;
       if (hingga && r.tarikh > hingga) return false;
       if (kataKunci && !String(r.item).toLowerCase().includes(kataKunci)) return false;
       return true;
     });
+  }
+
+  function paparJadualLaporan() {
+    const tbody = document.getElementById('isiJadual');
+    tbody.innerHTML = '';
+
+    const rekodDitapis = dapatRekodDitapis();
 
     if (rekodDitapis.length === 0) {
       tbody.innerHTML = `<tr><td colspan="5" class="text-center">Tiada rekod ditemui.</td></tr>`;
@@ -405,10 +513,7 @@
 
     rekodDitapis.forEach((r, index) => {
       jumlahKeseluruhan += Number(r.amaun) || 0;
-      const bahagianTarikh = String(r.tarikh).split('-');
-      const tarikhRingkas = bahagianTarikh.length === 3
-        ? `${bahagianTarikh[2]}/${bahagianTarikh[1]}/${bahagianTarikh[0].slice(2)}`
-        : r.tarikh;
+      const tarikhRingkas = formatTarikhRingkas(r.tarikh);
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -416,7 +521,7 @@
         <td>${tarikhRingkas}</td>
         <td>${r.item}</td>
         <td class="text-right">${(Number(r.amaun) || 0).toFixed(2)}</td>
-        <td class="text-center"><button type="button" class="btn-del-row" onclick="padamSatuRekod(${r.id})">✕</button></td>
+        <td class="text-center"><button type="button" class="btn-del-row" onclick="padamSatuRekod('${r.id}')">✕</button></td>
       `;
       tbody.appendChild(tr);
     });
@@ -431,72 +536,175 @@
     tbody.appendChild(trJumlah);
   }
 
-  function padamSatuRekod(idSasaran) {
-    const rekod = muatRekod();
-    const rekodKekal = rekod.filter(r => r.id !== idSasaran);
-    if (simpanSenaraiRekod(rekodKekal)) {
-      paparJadualLaporan();
-      tunjukStatus('statusLaporan', 'Satu baris rekod telah dipadam.');
-    }
-  }
+  function salinTeksLaporan() {
+    const dari = document.getElementById('tarikhDari').value || '-';
+    const hingga = document.getElementById('tarikhHingga').value || '-';
+    const kataKunci = document.getElementById('carianItem').value.trim();
+    const rekodDitapis = dapatRekodDitapis();
 
-  function buangDataBertindih() {
-    const rekod = muatRekod();
-    const kunciDilihat = new Set();
-    const rekodUnik = [];
-    let jumlahBertindih = 0;
-
-    rekod.forEach(r => {
-      const kunci = `${r.tarikh}|${String(r.item).trim().toLowerCase()}|${(Number(r.amaun) || 0).toFixed(2)}`;
-      if (kunciDilihat.has(kunci)) {
-        jumlahBertindih++;
-      } else {
-        kunciDilihat.add(kunci);
-        rekodUnik.push(r);
-      }
-    });
-
-    if (jumlahBertindih === 0) {
-      tunjukStatus('statusLaporan', 'Tiada data bertindih ditemui.');
+    if (rekodDitapis.length === 0) {
+      tunjukStatus('statusLaporan', 'Tiada rekod dalam tapisan semasa untuk disalin.', 'err');
       return;
     }
 
-    if (simpanSenaraiRekod(rekodUnik)) {
-      paparJadualLaporan();
-      tunjukStatus('statusLaporan', `${jumlahBertindih} rekod bertindih telah dibuang.`);
+    let jumlah = 0;
+    const baris = rekodDitapis.map((r, i) => {
+      const nilai = Number(r.amaun) || 0;
+      jumlah += nilai;
+      return `${i + 1}. [${formatTarikhRingkas(r.tarikh)}] ${r.item} — RM ${nilai.toFixed(2)}`;
+    });
+
+    const teks = [
+      'LAPORAN PERBELANJAAN',
+      `Tempoh: ${dari} hingga ${hingga}`,
+      kataKunci ? `Carian: "${kataKunci}"` : null,
+      '------------------------',
+      ...baris,
+      '------------------------',
+      `JUMLAH: RM ${jumlah.toFixed(2)}`
+    ].filter(Boolean).join('\n');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(teks)
+        .then(() => tunjukStatus('statusLaporan', `${rekodDitapis.length} rekod laporan berjaya disalin ke papan keratan.`))
+        .catch(() => salinFallback(teks, rekodDitapis.length));
     } else {
-      tunjukStatus('statusLaporan', 'Gagal mengemas kini rekod.', true);
+      salinFallback(teks, rekodDitapis.length);
     }
   }
 
-  function padamRekodMengikutTarikh() {
+  function salinFallback(teks, bilangan) {
+    const textarea = document.createElement('textarea');
+    textarea.value = teks;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      tunjukStatus('statusLaporan', `${bilangan} rekod laporan berjaya disalin.`);
+    } catch (e) {
+      tunjukStatus('statusLaporan', 'Gagal menyalin teks secara automatik.', 'err');
+    }
+    document.body.removeChild(textarea);
+  }
+
+  function eksportSandaranJSON() {
+    if (cacheRekod.length === 0) {
+      tunjukStatus('statusLaporan', 'Tiada rekod untuk dieksport.', 'err');
+      return;
+    }
+
+    const tarikhKini = new Date().toISOString().split('T')[0];
+    const bungkusan = {
+      aplikasi: 'Rekod & Laporan Perbelanjaan',
+      tarikhEksport: new Date().toISOString(),
+      jumlahRekod: cacheRekod.length,
+      data: cacheRekod
+    };
+
+    const blob = new Blob([JSON.stringify(bungkusan, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const pautan = document.createElement('a');
+    pautan.href = url;
+    pautan.download = `sandaran-perbelanjaan-${tarikhKini}.json`;
+    document.body.appendChild(pautan);
+    pautan.click();
+    document.body.removeChild(pautan);
+    URL.revokeObjectURL(url);
+
+    tunjukStatus('statusLaporan', `Fail sandaran (${cacheRekod.length} rekod) telah dimuat turun.`);
+  }
+
+  function bukaPemilihFailImport() {
+    const inputFail = document.getElementById('failImportJSON');
+    inputFail.value = '';
+    inputFail.click();
+  }
+
+  function importSandaranJSON(event) {
+    const fail = event.target.files && event.target.files[0];
+    if (!fail) return;
+
+    const pembaca = new FileReader();
+    pembaca.onload = async function(e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        const senaraiMasuk = Array.isArray(parsed)
+          ? parsed
+          : (parsed && Array.isArray(parsed.data) ? parsed.data : null);
+
+        if (!senaraiMasuk) {
+          tunjukStatus('statusLaporan', 'Format fail JSON tidak sah.', 'err');
+          return;
+        }
+
+        tunjukStatus('statusLaporan', 'Mengimport sandaran ke Google Sheets...', 'wait');
+        const hasil = await panggilSheetsPOST({ action: 'import', items: senaraiMasuk });
+        await panggilSheetsGET();
+        paparJadualLaporan();
+        tunjukStatus('statusLaporan', `Import ke Sheets selesai: ${hasil.ditambah} ditambah, ${hasil.dilangkau} bertindih dilangkau.`);
+      } catch (err) {
+        tunjukStatus('statusLaporan', 'Gagal mengimport fail JSON: ' + err.message, 'err');
+      }
+    };
+    pembaca.readAsText(fail);
+  }
+
+  async function padamSatuRekod(idSasaran) {
+    tunjukStatus('statusLaporan', 'Memadam rekod dalam Google Sheets...', 'wait');
+    try {
+      await panggilSheetsPOST({ action: 'deleteOne', id: idSasaran });
+      cacheRekod = cacheRekod.filter(r => String(r.id) !== String(idSasaran));
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', 'Satu baris rekod telah dipadam daripada Google Sheets.');
+    } catch (err) {
+      tunjukStatus('statusLaporan', 'Gagal memadam rekod: ' + err.message, 'err');
+    }
+  }
+
+  async function buangDataBertindih() {
+    tunjukStatus('statusLaporan', 'Menyemak data bertindih dalam Google Sheets...', 'wait');
+    try {
+      const hasil = await panggilSheetsPOST({ action: 'dedup' });
+      if (hasil.bertindih === 0) {
+        tunjukStatus('statusLaporan', 'Tiada data bertindih ditemui.');
+        return;
+      }
+      await panggilSheetsGET();
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', `${hasil.bertindih} rekod bertindih telah dibuang daripada Google Sheets.`);
+    } catch (err) {
+      tunjukStatus('statusLaporan', 'Gagal mengemas kini rekod: ' + err.message, 'err');
+    }
+  }
+
+  async function padamRekodMengikutTarikh() {
     const dari = document.getElementById('tarikhDari').value;
     const hingga = document.getElementById('tarikhHingga').value;
 
     if (!dari || !hingga) {
-      tunjukStatus('statusLaporan', 'Sila pilih tarikh Dari dan Hingga terlebih dahulu.', true);
+      tunjukStatus('statusLaporan', 'Sila pilih tarikh Dari dan Hingga terlebih dahulu.', 'err');
       return;
     }
 
     if (dari > hingga) {
-      tunjukStatus('statusLaporan', 'Tarikh Dari tidak boleh melebihi tarikh Hingga.', true);
+      tunjukStatus('statusLaporan', 'Tarikh Dari tidak boleh melebihi tarikh Hingga.', 'err');
       return;
     }
 
-    const rekod = muatRekod();
-    const rekodKekal = rekod.filter(r => r.tarikh < dari || r.tarikh > hingga);
-    const jumlahDipadam = rekod.length - rekodKekal.length;
-
-    if (jumlahDipadam === 0) {
-      tunjukStatus('statusLaporan', `Tiada rekod ditemui dari ${dari} hingga ${hingga} untuk dipadam.`, true);
-      return;
-    }
-
-    if (simpanSenaraiRekod(rekodKekal)) {
+    tunjukStatus('statusLaporan', `Memadam rekod dari ${dari} hingga ${hingga}...`, 'wait');
+    try {
+      const hasil = await panggilSheetsPOST({ action: 'deleteRange', dari: dari, hingga: hingga });
+      if (hasil.dipadam === 0) {
+        tunjukStatus('statusLaporan', `Tiada rekod ditemui dari ${dari} hingga ${hingga} untuk dipadam.`, 'err');
+        return;
+      }
+      await panggilSheetsGET();
       paparJadualLaporan();
-      tunjukStatus('statusLaporan', `${jumlahDipadam} rekod dari ${dari} hingga ${hingga} telah dipadam.`);
-    } else {
-      tunjukStatus('statusLaporan', 'Gagal memadam rekod daripada penyimpanan pelayar.', true);
+      tunjukStatus('statusLaporan', `${hasil.dipadam} rekod dari ${dari} hingga ${hingga} telah dipadam daripada Google Sheets.`);
+    } catch (err) {
+      tunjukStatus('statusLaporan', 'Gagal memadam rekod: ' + err.message, 'err');
     }
   }
 </script>
