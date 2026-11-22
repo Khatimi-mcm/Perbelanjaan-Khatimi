@@ -41,6 +41,9 @@
     margin-top: 20px;
     margin-bottom: 12px;
   }
+  .section-first {
+    margin-top: 0;
+  }
   label {
     display: block;
     font-size: 13px;
@@ -48,7 +51,7 @@
     margin-bottom: 4px;
     color: #495057;
   }
-  input {
+  input, select {
     width: 100%;
     box-sizing: border-box;
     padding: 12px;
@@ -57,8 +60,9 @@
     border-radius: 8px;
     margin-bottom: 10px;
     background-color: #fff;
+    color: #1c1e21;
   }
-  input:focus {
+  input:focus, select:focus {
     outline: none;
     border-color: #0d6efd;
   }
@@ -135,11 +139,11 @@
     width: 100%;
     border-collapse: collapse;
     margin-top: 12px;
-    font-size: 13px;
+    font-size: 12px;
   }
   th, td {
     border: 1px solid #dee2e6;
-    padding: 8px 6px;
+    padding: 7px 5px;
     text-align: left;
   }
   th {
@@ -218,14 +222,23 @@
 <div class="container">
   <h1 class="app-title">PERBELANJAAN KHATIMI</h1>
 
-  <label for="tarikh">TARIKH</label>
+  <h2 class="section-first">Tarikh</h2>
   <input type="date" id="tarikh">
 
   <h2>Perbelanjaan</h2>
   <div id="senaraiBelanja">
     <div class="item-box belanja-group">
-      <label>Item 1</label>
-      <input type="text" class="input-item" placeholder="Nama perbelanjaan 1">
+      <label>Kategori 1</label>
+      <select class="input-kategori">
+        <option value="BILL">BILL</option>
+        <option value="MAKAN">MAKAN</option>
+        <option value="PERALATAN">PERALATAN</option>
+        <option value="UTILITI">UTILITI</option>
+        <option value="MINYAK">MINYAK</option>
+        <option value="LAIN-LAIN">LAIN-LAIN</option>
+      </select>
+      <label>Diskripsi 1</label>
+      <input type="text" class="input-diskripsi" placeholder="Masukkan diskripsi 1">
       <label>Amaun 1 (RM)</label>
       <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
     </div>
@@ -259,7 +272,18 @@
       </div>
     </div>
 
-    <label for="carianItem">Carian Perkataan / Item</label>
+    <label for="tapisKategori">Tapis Kategori</label>
+    <select id="tapisKategori" onchange="paparJadualLaporan()">
+      <option value="">SEMUA KATEGORI</option>
+      <option value="BILL">BILL</option>
+      <option value="MAKAN">MAKAN</option>
+      <option value="PERALATAN">PERALATAN</option>
+      <option value="UTILITI">UTILITI</option>
+      <option value="MINYAK">MINYAK</option>
+      <option value="LAIN-LAIN">LAIN-LAIN</option>
+    </select>
+
+    <label for="carianItem">Carian Perkataan / Diskripsi</label>
     <input type="text" id="carianItem" placeholder="Taip perkataan untuk tapis rekod..." oninput="paparJadualLaporan()">
 
     <button type="button" class="btn-action btn-refresh" onclick="segarSemulaDariSheets()">
@@ -269,11 +293,12 @@
     <table>
       <thead>
         <tr>
-          <th class="text-center" style="width: 10%;">Bil.</th>
-          <th style="width: 24%;">Tarikh</th>
-          <th style="width: 34%;">Item</th>
-          <th class="text-right" style="width: 22%;">Amaun</th>
-          <th class="text-center" style="width: 10%;">Buang</th>
+          <th class="text-center" style="width: 8%;">Bil.</th>
+          <th style="width: 20%;">Tarikh</th>
+          <th style="width: 22%;">Kategori</th>
+          <th style="width: 26%;">Diskripsi</th>
+          <th class="text-right" style="width: 16%;">Amaun</th>
+          <th class="text-center" style="width: 8%;">Buang</th>
         </tr>
       </thead>
       <tbody id="isiJadual"></tbody>
@@ -297,6 +322,15 @@
 
 <script>
   const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxte5u7V8sAWs2vKkDz7HvpjLx_0C6G6fM8DyZiWX4B7kDJ8L1zJNcSlXPvJQC7Ym4gXg/exec';
+
+  const PILIHAN_KATEGORI_HTML = `
+    <option value="BILL">BILL</option>
+    <option value="MAKAN">MAKAN</option>
+    <option value="PERALATAN">PERALATAN</option>
+    <option value="UTILITI">UTILITI</option>
+    <option value="MINYAK">MINYAK</option>
+    <option value="LAIN-LAIN">LAIN-LAIN</option>
+  `;
 
   let bilBelanja = 1;
   let cacheRekod = [];
@@ -400,7 +434,8 @@
     cacheRekod = (res.data || []).map(r => ({
       id: String(r.id),
       tarikh: normalisasiTarikhISO(r.tarikh),
-      item: String(r.item),
+      kategori: String(r.kategori || ''),
+      diskripsi: String(r.diskripsi || ''),
       amaun: Number(r.amaun) || 0
     }));
     return cacheRekod;
@@ -416,8 +451,10 @@
     const div = document.createElement('div');
     div.className = 'item-box belanja-group';
     div.innerHTML = `
-      <label>Item ${bilBelanja}</label>
-      <input type="text" class="input-item" placeholder="Nama perbelanjaan ${bilBelanja}">
+      <label>Kategori ${bilBelanja}</label>
+      <select class="input-kategori">${PILIHAN_KATEGORI_HTML}</select>
+      <label>Diskripsi ${bilBelanja}</label>
+      <input type="text" class="input-diskripsi" placeholder="Masukkan diskripsi ${bilBelanja}">
       <label>Amaun ${bilBelanja} (RM)</label>
       <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
     `;
@@ -437,8 +474,10 @@
     document.getElementById('tarikh').value = dapatTarikhSemasaTempatan();
     document.getElementById('senaraiBelanja').innerHTML = `
       <div class="item-box belanja-group">
-        <label>Item 1</label>
-        <input type="text" class="input-item" placeholder="Nama perbelanjaan 1">
+        <label>Kategori 1</label>
+        <select class="input-kategori">${PILIHAN_KATEGORI_HTML}</select>
+        <label>Diskripsi 1</label>
+        <input type="text" class="input-diskripsi" placeholder="Masukkan diskripsi 1">
         <label>Amaun 1 (RM)</label>
         <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
       </div>
@@ -458,21 +497,23 @@
     const itemUntukDihantar = [];
 
     kumpulanBelanja.forEach((kumpulan, idx) => {
-      const namaItem = kumpulan.querySelector('.input-item').value.trim();
+      const kategori = kumpulan.querySelector('.input-kategori').value;
+      const diskripsi = kumpulan.querySelector('.input-diskripsi').value.trim();
       const amaun = parseFloat(kumpulan.querySelector('.input-amaun').value) || 0;
 
-      if (namaItem !== '' || amaun > 0) {
+      if (diskripsi !== '' || amaun > 0) {
         itemUntukDihantar.push({
           id: `${Date.now()}-${idx}-${Math.floor(Math.random() * 10000)}`,
           tarikh: tarikh,
-          item: namaItem || 'Perbelanjaan Tanpa Nama',
+          kategori: kategori,
+          diskripsi: diskripsi || '-',
           amaun: amaun
         });
       }
     });
 
     if (itemUntukDihantar.length === 0) {
-      tunjukStatus('statusBorang', 'Tiada item atau amaun diisi untuk disimpan.', 'err');
+      tunjukStatus('statusBorang', 'Tiada diskripsi atau amaun diisi untuk disimpan.', 'err');
       return;
     }
 
@@ -507,7 +548,7 @@
 
   async function segarSemulaDariSheets() {
     const tbody = document.getElementById('isiJadual');
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center">Memuatkan data dari Google Sheets...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center">Memuatkan data dari Google Sheets...</td></tr>`;
     tunjukStatus('statusLaporan', 'Menyegerakkan data dari Google Sheets...', 'wait');
 
     try {
@@ -515,7 +556,7 @@
       paparJadualLaporan();
       tunjukStatus('statusLaporan', `Data terkini dimuatkan (${cacheRekod.length} jumlah rekod dalam Sheets).`);
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center">Gagal memuatkan data.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center">Gagal memuatkan data.</td></tr>`;
       tunjukStatus('statusLaporan', 'Ralat sambungan Google Sheets: ' + err.message, 'err');
     }
   }
@@ -523,13 +564,15 @@
   function dapatRekodDitapis() {
     const dari = normalisasiTarikhISO(document.getElementById('tarikhDari').value);
     const hingga = normalisasiTarikhISO(document.getElementById('tarikhHingga').value);
+    const kategoriDipilih = document.getElementById('tapisKategori').value.trim().toUpperCase();
     const kataKunci = document.getElementById('carianItem').value.trim().toLowerCase();
 
     return cacheRekod.filter(r => {
       const tarikhRekod = normalisasiTarikhISO(r.tarikh);
       if (dari && tarikhRekod < dari) return false;
       if (hingga && tarikhRekod > hingga) return false;
-      if (kataKunci && !String(r.item).toLowerCase().includes(kataKunci)) return false;
+      if (kategoriDipilih && String(r.kategori).trim().toUpperCase() !== kategoriDipilih) return false;
+      if (kataKunci && !String(r.diskripsi).toLowerCase().includes(kataKunci) && !String(r.kategori).toLowerCase().includes(kataKunci)) return false;
       return true;
     });
   }
@@ -541,7 +584,7 @@
     const rekodDitapis = dapatRekodDitapis();
 
     if (rekodDitapis.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center">Tiada rekod ditemui.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center">Tiada rekod ditemui.</td></tr>`;
       return;
     }
 
@@ -555,7 +598,8 @@
       tr.innerHTML = `
         <td class="text-center">${index + 1}</td>
         <td>${tarikhRingkas}</td>
-        <td>${r.item}</td>
+        <td>${r.kategori || '-'}</td>
+        <td>${r.diskripsi}</td>
         <td class="text-right">${(Number(r.amaun) || 0).toFixed(2)}</td>
         <td class="text-center"><button type="button" class="btn-del-row" onclick="padamSatuRekod('${r.id}')">✕</button></td>
       `;
@@ -565,7 +609,7 @@
     const trJumlah = document.createElement('tr');
     trJumlah.className = 'total-row';
     trJumlah.innerHTML = `
-      <td colspan="3" class="text-right">JUMLAH</td>
+      <td colspan="4" class="text-right">JUMLAH</td>
       <td class="text-right">${jumlahKeseluruhan.toFixed(2)}</td>
       <td></td>
     `;
@@ -575,6 +619,7 @@
   function salinTeksLaporan() {
     const dari = normalisasiTarikhISO(document.getElementById('tarikhDari').value) || '-';
     const hingga = normalisasiTarikhISO(document.getElementById('tarikhHingga').value) || '-';
+    const kategoriDipilih = document.getElementById('tapisKategori').value;
     const kataKunci = document.getElementById('carianItem').value.trim();
     const rekodDitapis = dapatRekodDitapis();
 
@@ -587,12 +632,14 @@
     const baris = rekodDitapis.map((r, i) => {
       const nilai = Number(r.amaun) || 0;
       jumlah += nilai;
-      return `${i + 1}. [${formatTarikhRingkas(r.tarikh)}] ${r.item} — RM ${nilai.toFixed(2)}`;
+      const kat = r.kategori ? `[${r.kategori}] ` : '';
+      return `${i + 1}. [${formatTarikhRingkas(r.tarikh)}] ${kat}${r.diskripsi} — RM ${nilai.toFixed(2)}`;
     });
 
     const teks = [
-      'LAPORAN PERBELANJAAN',
+      'LAPORAN PERBELANJAAN KHATIMI',
       `Tempoh: ${dari} hingga ${hingga}`,
+      kategoriDipilih ? `Kategori: ${kategoriDipilih}` : null,
       kataKunci ? `Carian: "${kataKunci}"` : null,
       '------------------------',
       ...baris,
@@ -685,3 +732,4 @@
 
 </body>
 </html>
+  
