@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rekod & Laporan Perbelanjaan</title>
+<title>Perbelanjaan Khatimi</title>
 <style>
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -20,6 +20,18 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
+  .app-title {
+    font-size: 20px;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #0d6efd;
+    margin-top: 0;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+  }
   h2 {
     font-size: 16px;
     text-transform: uppercase;
@@ -29,7 +41,6 @@
     margin-top: 20px;
     margin-bottom: 12px;
   }
-  h2:first-child { margin-top: 0; }
   label {
     display: block;
     font-size: 13px;
@@ -155,23 +166,11 @@
     font-size: 14px;
     margin-top: 12px;
   }
-  .btn-export {
-    background-color: #198754;
-    padding: 11px;
-    font-size: 14px;
-    margin-top: 8px;
-  }
-  .btn-import {
-    background-color: #6610f2;
-    padding: 11px;
-    font-size: 14px;
-    margin-top: 8px;
-  }
   .btn-dedup {
     background-color: #fd7e14;
     padding: 11px;
     font-size: 14px;
-    margin-top: 12px;
+    margin-top: 8px;
   }
   .btn-delete-range {
     background-color: #dc3545;
@@ -217,6 +216,8 @@
 <body>
 
 <div class="container">
+  <h1 class="app-title">PERBELANJAAN KHATIMI</h1>
+
   <label for="tarikh">TARIKH</label>
   <input type="date" id="tarikh">
 
@@ -282,15 +283,6 @@
       Salin Teks Laporan
     </button>
 
-    <button type="button" class="btn-action btn-export" onclick="eksportSandaranJSON()">
-      Eksport Sandaran (.JSON)
-    </button>
-
-    <button type="button" class="btn-action btn-import" onclick="bukaPemilihFailImport()">
-      Import Sandaran (.JSON) ke Sheets
-    </button>
-    <input type="file" id="failImportJSON" accept=".json,application/json" style="display: none;" onchange="importSandaranJSON(event)">
-
     <button type="button" class="btn-action btn-dedup" onclick="buangDataBertindih()">
       Buang Data Bertindih
     </button>
@@ -309,8 +301,16 @@
   let bilBelanja = 1;
   let cacheRekod = [];
 
+  function dapatTarikhSemasaTempatan() {
+    const sekarang = new Date();
+    const tahun = sekarang.getFullYear();
+    const bulan = String(sekarang.getMonth() + 1).padStart(2, '0');
+    const hari = String(sekarang.getDate()).padStart(2, '0');
+    return `${tahun}-${bulan}-${hari}`;
+  }
+
   window.onload = function() {
-    const hariIni = new Date().toISOString().split('T')[0];
+    const hariIni = dapatTarikhSemasaTempatan();
     document.getElementById('tarikh').value = hariIni;
     document.getElementById('tarikhDari').value = hariIni;
     document.getElementById('tarikhHingga').value = hariIni;
@@ -418,7 +418,7 @@
     div.innerHTML = `
       <label>Item ${bilBelanja}</label>
       <input type="text" class="input-item" placeholder="Nama perbelanjaan ${bilBelanja}">
-      <label>Amaun 1 (RM)</label>
+      <label>Amaun ${bilBelanja} (RM)</label>
       <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
     `;
     bekas.appendChild(div);
@@ -434,6 +434,7 @@
 
   function resetBorang() {
     bilBelanja = 1;
+    document.getElementById('tarikh').value = dapatTarikhSemasaTempatan();
     document.getElementById('senaraiBelanja').innerHTML = `
       <div class="item-box belanja-group">
         <label>Item 1</label>
@@ -622,68 +623,6 @@
       tunjukStatus('statusLaporan', 'Gagal menyalin teks secara automatik.', 'err');
     }
     document.body.removeChild(textarea);
-  }
-
-  function eksportSandaranJSON() {
-    if (cacheRekod.length === 0) {
-      tunjukStatus('statusLaporan', 'Tiada rekod untuk dieksport.', 'err');
-      return;
-    }
-
-    const tarikhKini = new Date().toISOString().split('T')[0];
-    const bungkusan = {
-      aplikasi: 'Rekod & Laporan Perbelanjaan',
-      tarikhEksport: new Date().toISOString(),
-      jumlahRekod: cacheRekod.length,
-      data: cacheRekod
-    };
-
-    const blob = new Blob([JSON.stringify(bungkusan, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const pautan = document.createElement('a');
-    pautan.href = url;
-    pautan.download = `sandaran-perbelanjaan-${tarikhKini}.json`;
-    document.body.appendChild(pautan);
-    pautan.click();
-    document.body.removeChild(pautan);
-    URL.revokeObjectURL(url);
-
-    tunjukStatus('statusLaporan', `Fail sandaran (${cacheRekod.length} rekod) telah dimuat turun.`);
-  }
-
-  function bukaPemilihFailImport() {
-    const inputFail = document.getElementById('failImportJSON');
-    inputFail.value = '';
-    inputFail.click();
-  }
-
-  function importSandaranJSON(event) {
-    const fail = event.target.files && event.target.files[0];
-    if (!fail) return;
-
-    const pembaca = new FileReader();
-    pembaca.onload = async function(e) {
-      try {
-        const parsed = JSON.parse(e.target.result);
-        const senaraiMasuk = Array.isArray(parsed)
-          ? parsed
-          : (parsed && Array.isArray(parsed.data) ? parsed.data : null);
-
-        if (!senaraiMasuk) {
-          tunjukStatus('statusLaporan', 'Format fail JSON tidak sah.', 'err');
-          return;
-        }
-
-        tunjukStatus('statusLaporan', 'Mengimport sandaran ke Google Sheets...', 'wait');
-        const hasil = await panggilSheetsPOST({ action: 'import', items: senaraiMasuk });
-        await panggilSheetsGET();
-        paparJadualLaporan();
-        tunjukStatus('statusLaporan', `Import ke Sheets selesai: ${hasil.ditambah} ditambah, ${hasil.dilangkau} bertindih dilangkau.`);
-      } catch (err) {
-        tunjukStatus('statusLaporan', 'Gagal mengimport fail JSON: ' + err.message, 'err');
-      }
-    };
-    pembaca.readAsText(fail);
   }
 
   async function padamSatuRekod(idSasaran) {
