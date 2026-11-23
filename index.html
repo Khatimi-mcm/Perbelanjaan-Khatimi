@@ -195,6 +195,20 @@
     font-weight: bold;
     background-color: #e7f1ff;
   }
+  .excluded-row {
+    opacity: 0.55;
+    background-color: #fafafa;
+  }
+  .badge-dikecualikan {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #842029;
+    background-color: #f8d7da;
+    border-radius: 4px;
+    padding: 1px 4px;
+    margin-left: 3px;
+  }
   .cat-summary-box {
     background: #f8f9fa;
     border: 1px solid #dee2e6;
@@ -202,19 +216,50 @@
     padding: 12px;
     margin-top: 14px;
   }
+  .cat-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
   .cat-summary-title {
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     color: #495057;
-    margin-bottom: 8px;
+  }
+  .cat-toggle-btns {
+    display: flex;
+    gap: 6px;
+  }
+  .btn-mini {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+    background-color: #ffffff;
+    color: #495057;
+    cursor: pointer;
+  }
+  .btn-mini:active {
+    background-color: #e9ecef;
   }
   .cat-summary-table {
     margin-top: 0;
     font-size: 12px;
   }
   .cat-summary-table th, .cat-summary-table td {
-    padding: 5px 8px;
+    padding: 6px 6px;
+  }
+  .chk-kategori {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #0d6efd;
   }
   .btn-refresh {
     background-color: #0d6efd;
@@ -327,10 +372,12 @@
         <select id="tapisKategori" onchange="paparJadualLaporan()">
           <option value="">SEMUA KATEGORI</option>
           <option value="BILL">BILL</option>
-          <option value="MAKAN">MAKAN</option>
+          <option value="MAKANAN">MAKANAN</option>
           <option value="PERALATAN">PERALATAN</option>
           <option value="UTILITI">UTILITI</option>
           <option value="MINYAK">MINYAK</option>
+          <option value="RUNCIT">RUNCIT</option>
+          <option value="SHOPEE">SHOPEE</option>
           <option value="MAMA">MAMA</option>
           <option value="KOMITMEN">KOMITMEN</option>
           <option value="LAIN-LAIN">LAIN-LAIN</option>
@@ -358,9 +405,9 @@
       <thead>
         <tr>
           <th class="text-center" style="width: 8%;">Bil.</th>
-          <th style="width: 20%;">Tarikh</th>
+          <th style="width: 19%;">Tarikh</th>
           <th style="width: 22%;">Kategori</th>
-          <th style="width: 26%;">Diskripsi</th>
+          <th style="width: 27%;">Diskripsi</th>
           <th class="text-right" style="width: 16%;">Amaun</th>
           <th class="text-center" style="width: 8%;">Buang</th>
         </tr>
@@ -369,13 +416,20 @@
     </table>
 
     <div id="ringkasanKategori" class="cat-summary-box" style="display: none;">
-      <div class="cat-summary-title">Ringkasan Mengikut Kategori (Tapisan Semasa)</div>
+      <div class="cat-summary-header">
+        <span class="cat-summary-title">Ringkasan &amp; Pilihan Kiraan Kategori</span>
+        <div class="cat-toggle-btns">
+          <button type="button" class="btn-mini" onclick="setSemuaKategoriDikira(true)">Tanda Semua</button>
+          <button type="button" class="btn-mini" onclick="setSemuaKategoriDikira(false)">Nyahtanda Semua</button>
+        </div>
+      </div>
       <table class="cat-summary-table">
         <thead>
           <tr>
+            <th class="text-center" style="width: 13%;">Kira</th>
             <th>Kategori</th>
-            <th class="text-center" style="width: 20%;">Item</th>
-            <th class="text-right" style="width: 30%;">Jumlah (RM)</th>
+            <th class="text-center" style="width: 16%;">Item</th>
+            <th class="text-right" style="width: 29%;">Jumlah (RM)</th>
           </tr>
         </thead>
         <tbody id="isiRingkasanKategori"></tbody>
@@ -403,10 +457,12 @@
 
   const SENARAI_KATEGORI = [
     'BILL',
-    'MAKAN',
+    'MAKANAN',
     'PERALATAN',
     'UTILITI',
     'MINYAK',
+    'RUNCIT',
+    'SHOPEE',
     'MAMA',
     'KOMITMEN',
     'LAIN-LAIN'
@@ -414,6 +470,8 @@
 
   let bilBelanja = 0;
   let cacheRekod = [];
+  // Menyimpan kategori yang dinyah-tanda (false = dikecualikan daripada jumlah keseluruhan)
+  const kategoriDikecualikan = new Set();
 
   function formatISO(objTarikh) {
     const tahun = objTarikh.getFullYear();
@@ -424,6 +482,12 @@
 
   function dapatTarikhSemasaTempatan() {
     return formatISO(new Date());
+  }
+
+  function normalisasiNamaKategori(kat) {
+    const bersih = String(kat || 'LAIN-LAIN').trim().toUpperCase();
+    if (bersih === 'MAKAN') return 'MAKANAN';
+    return bersih || 'LAIN-LAIN';
   }
 
   function janaPilihanKategoriHTML(terpilih = 'BILL') {
@@ -587,7 +651,7 @@
     cacheRekod = (res.data || []).map(r => ({
       id: String(r.id),
       tarikh: normalisasiTarikhISO(r.tarikh),
-      kategori: String(r.kategori || '').trim().toUpperCase(),
+      kategori: normalisasiNamaKategori(r.kategori),
       diskripsi: String(r.diskripsi || '').trim(),
       amaun: Number(r.amaun) || 0
     }));
@@ -635,7 +699,7 @@
     const itemUntukDihantar = [];
 
     kumpulanBelanja.forEach((kumpulan, idx) => {
-      const kategori = kumpulan.querySelector('.input-kategori').value;
+      const kategori = normalisasiNamaKategori(kumpulan.querySelector('.input-kategori').value);
       const diskripsi = kumpulan.querySelector('.input-diskripsi').value.trim();
       const amaun = parseFloat(kumpulan.querySelector('.input-amaun').value) || 0;
 
@@ -701,6 +765,30 @@
     }
   }
 
+  function kategoriSedangDikira(kat) {
+    return !kategoriDikecualikan.has(normalisasiNamaKategori(kat));
+  }
+
+  function togolKiraanKategori(kat, dikira) {
+    const nama = normalisasiNamaKategori(kat);
+    if (dikira) {
+      kategoriDikecualikan.delete(nama);
+    } else {
+      kategoriDikecualikan.add(nama);
+    }
+    paparJadualLaporan();
+  }
+
+  function setSemuaKategoriDikira(dikira) {
+    if (dikira) {
+      kategoriDikecualikan.clear();
+    } else {
+      SENARAI_KATEGORI.forEach(k => kategoriDikecualikan.add(k));
+      cacheRekod.forEach(r => kategoriDikecualikan.add(normalisasiNamaKategori(r.kategori)));
+    }
+    paparJadualLaporan();
+  }
+
   function dapatRekodDitapis() {
     const dari = normalisasiTarikhISO(document.getElementById('tarikhDari').value);
     const hingga = normalisasiTarikhISO(document.getElementById('tarikhHingga').value);
@@ -710,10 +798,11 @@
 
     const ditapis = cacheRekod.filter(r => {
       const tarikhRekod = normalisasiTarikhISO(r.tarikh);
+      const katRekod = normalisasiNamaKategori(r.kategori);
       if (dari && tarikhRekod < dari) return false;
       if (hingga && tarikhRekod > hingga) return false;
-      if (kategoriDipilih && String(r.kategori).trim().toUpperCase() !== kategoriDipilih) return false;
-      if (kataKunci && !String(r.diskripsi).toLowerCase().includes(kataKunci) && !String(r.kategori).toLowerCase().includes(kataKunci)) return false;
+      if (kategoriDipilih && katRekod !== kategoriDipilih) return false;
+      if (kataKunci && !String(r.diskripsi).toLowerCase().includes(kataKunci) && !katRekod.toLowerCase().includes(kataKunci)) return false;
       return true;
     });
 
@@ -725,7 +814,7 @@
         return (Number(b.amaun) || 0) - (Number(a.amaun) || 0);
       }
       if (susunan === 'kategori') {
-        return String(a.kategori || '').localeCompare(String(b.kategori || ''));
+        return normalisasiNamaKategori(a.kategori).localeCompare(normalisasiNamaKategori(b.kategori));
       }
       return normalisasiTarikhISO(b.tarikh).localeCompare(normalisasiTarikhISO(a.tarikh));
     });
@@ -733,7 +822,7 @@
     return ditapis;
   }
 
-  function paparRingkasanKategori(rekodDitapis) {
+  function paparRingkasanKategori(rekodDitapis, jumlahDikira) {
     const kotak = document.getElementById('ringkasanKategori');
     const tbody = document.getElementById('isiRingkasanKategori');
 
@@ -745,7 +834,7 @@
 
     const peta = new Map();
     rekodDitapis.forEach(r => {
-      const kat = (r.kategori || 'LAIN-LAIN').trim().toUpperCase();
+      const kat = normalisasiNamaKategori(r.kategori);
       const semasa = peta.get(kat) || { bil: 0, jumlah: 0 };
       semasa.bil += 1;
       semasa.jumlah += Number(r.amaun) || 0;
@@ -753,13 +842,24 @@
     });
 
     const barisUrutan = Array.from(peta.entries()).sort((a, b) => b[1].jumlah - a[1].jumlah);
-    tbody.innerHTML = barisUrutan.map(([kat, info]) => `
-      <tr>
-        <td>${kat}</td>
-        <td class="text-center">${info.bil}</td>
-        <td class="text-right">${info.jumlah.toFixed(2)}</td>
+    tbody.innerHTML = barisUrutan.map(([kat, info]) => {
+      const dikira = kategoriSedangDikira(kat);
+      return `
+        <tr class="${dikira ? '' : 'excluded-row'}">
+          <td class="text-center">
+            <input type="checkbox" class="chk-kategori" ${dikira ? 'checked' : ''} onchange="togolKiraanKategori('${kat.replace(/'/g, "\\'")}', this.checked)">
+          </td>
+          <td>${kat}</td>
+          <td class="text-center">${info.bil}</td>
+          <td class="text-right">${info.jumlah.toFixed(2)}</td>
+        </tr>
+      `;
+    }).join('') + `
+      <tr class="total-row">
+        <td colspan="3" class="text-right">JUMLAH DIKIRA</td>
+        <td class="text-right">${jumlahDikira.toFixed(2)}</td>
       </tr>
-    `).join('');
+    `;
 
     kotak.style.display = 'block';
   }
@@ -769,36 +869,46 @@
     tbody.innerHTML = '';
 
     const rekodDitapis = dapatRekodDitapis();
-    paparRingkasanKategori(rekodDitapis);
 
     if (rekodDitapis.length === 0) {
+      paparRingkasanKategori([], 0);
       tbody.innerHTML = `<tr><td colspan="6" class="text-center">Tiada rekod ditemui.</td></tr>`;
       return;
     }
 
-    let jumlahKeseluruhan = 0;
+    let jumlahDikira = 0;
 
     rekodDitapis.forEach((r, index) => {
-      jumlahKeseluruhan += Number(r.amaun) || 0;
+      const nilai = Number(r.amaun) || 0;
+      const kat = normalisasiNamaKategori(r.kategori);
+      const dikira = kategoriSedangDikira(kat);
+      if (dikira) {
+        jumlahDikira += nilai;
+      }
+
       const tarikhRingkas = formatTarikhRingkas(r.tarikh);
+      const labelKecuali = dikira ? '' : `<span class="badge-dikecualikan">Dikecualikan</span>`;
 
       const tr = document.createElement('tr');
+      tr.className = dikira ? '' : 'excluded-row';
       tr.innerHTML = `
         <td class="text-center">${index + 1}</td>
         <td>${tarikhRingkas}</td>
-        <td>${r.kategori || '-'}</td>
+        <td>${kat}${labelKecuali}</td>
         <td>${r.diskripsi}</td>
-        <td class="text-right">${(Number(r.amaun) || 0).toFixed(2)}</td>
+        <td class="text-right">${nilai.toFixed(2)}</td>
         <td class="text-center"><button type="button" class="btn-del-row" onclick="padamSatuRekod('${r.id}')">✕</button></td>
       `;
       tbody.appendChild(tr);
     });
 
+    paparRingkasanKategori(rekodDitapis, jumlahDikira);
+
     const trJumlah = document.createElement('tr');
     trJumlah.className = 'total-row';
     trJumlah.innerHTML = `
       <td colspan="4" class="text-right">JUMLAH</td>
-      <td class="text-right">${jumlahKeseluruhan.toFixed(2)}</td>
+      <td class="text-right">${jumlahDikira.toFixed(2)}</td>
       <td></td>
     `;
     tbody.appendChild(trJumlah);
@@ -816,12 +926,16 @@
       return;
     }
 
-    let jumlah = 0;
+    let jumlahDikira = 0;
     const baris = rekodDitapis.map((r, i) => {
       const nilai = Number(r.amaun) || 0;
-      jumlah += nilai;
-      const kat = r.kategori ? `[${r.kategori}] ` : '';
-      return `${i + 1}. [${formatTarikhRingkas(r.tarikh)}] ${kat}${r.diskripsi} — RM ${nilai.toFixed(2)}`;
+      const kat = normalisasiNamaKategori(r.kategori);
+      const dikira = kategoriSedangDikira(kat);
+      if (dikira) {
+        jumlahDikira += nilai;
+      }
+      const statusTanda = dikira ? '' : ' [Dikecualikan]';
+      return `${i + 1}. [${formatTarikhRingkas(r.tarikh)}] [${kat}] ${r.diskripsi} — RM ${nilai.toFixed(2)}${statusTanda}`;
     });
 
     const teks = [
@@ -832,7 +946,7 @@
       '------------------------',
       ...baris,
       '------------------------',
-      `JUMLAH: RM ${jumlah.toFixed(2)}`
+      `JUMLAH DIKIRA: RM ${jumlahDikira.toFixed(2)}`
     ].filter(Boolean).join('\n');
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
