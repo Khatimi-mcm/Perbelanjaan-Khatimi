@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perbelanjaan Khatimi</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f4f6f8;
+    color: #1c1e21;
+    margin: 0;
+    padding: 16px;
+  }
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .app-title {
+    font-size: 20px;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #0d6efd;
+    margin-top: 0;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+  }
+  h2 {
+    font-size: 16px;
+    text-transform: uppercase;
+    color: #0d6efd;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 6px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+  }
+  .section-first {
+    margin-top: 0;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #495057;
+  }
+  input, select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    color: #1c1e21;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: #0d6efd;
+  }
+  .item-box {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #e9ecef;
+  }
+  .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .item-header label {
+    margin-bottom: 0;
+  }
+  .btn-remove-box {
+    background: #ffe5e8;
+    color: #dc3545;
+    border: 1px solid #f5c2c7;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    cursor: pointer;
+  }
+  .btn-plus {
+    width: 100%;
+    padding: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #0d6efd;
+    background-color: #e7f1ff;
+    border: 1px dashed #0d6efd;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 12px;
+  }
+  .btn-plus:active { background-color: #cfe2ff; }
+
+  .sumber-card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .sumber-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .sumber-nama {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0a58ca;
+  }
+  .sumber-baki {
+    font-size: 14px;
+    font-weight: 800;
+    color: #198754;
+  }
+  .sumber-baki.negatif {
+    color: #dc3545;
+  }
+  .sumber-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: end;
+  }
+  .sumber-grid input {
+    margin-bottom: 0;
+    padding: 9px 10px;
+    font-size: 14px;
+  }
+  .sumber-terbelanja-box {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #495057;
+    text-align: right;
+  }
+  .tambah-modal-wrap {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #dee2e6;
+  }
+  .tambah-modal-wrap input {
+    margin-bottom: 0;
+    padding: 8px 10px;
+    font-size: 14px;
+    background-color: #fffdf5;
+    border-color: #ffe69c;
+  }
+
+  .modal-head, .modal-row {
+    display: grid;
+    grid-template-columns: 22px 1fr 95px 26px;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .modal-head {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6c757d;
+    text-transform: uppercase;
+  }
+  .modal-no { font-size: 13px; font-weight: 700; color: #495057; }
+  .modal-row input { margin-bottom: 0; }
+  .btn-plus-modal {
+    width: 100%;
+    padding: 7px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #b58100;
+    background-color: #fff8e1;
+    border: 1px dashed #ffc107;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 2px 0 8px;
+  }
+  .btn-kemaskini {
+    background-color: #198754;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .summary-box {
+    background: #e7f1ff;
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 16px;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .jumlah-belanja {
+    font-size: 18px;
+    font-weight: bold;
+    color: #0a58ca;
+  }
+
+  .btn-action {
+    width: 100%;
+    padding: 13px;
+    margin-top: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .btn-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .btn-save { background-color: #198754; }
+  .btn-reset { background-color: #6c757d; }
+  .btn-report { background-color: #0d6efd; }
+
+  #bahagianLaporan {
+    display: none;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 2px dashed #dee2e6;
+  }
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .btn-preset {
+    padding: 8px 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0a58ca;
+    background-color: #e7f1ff;
+    border: 1px solid #b6d4fe;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .btn-preset:active {
+    background-color: #cfe2ff;
+  }
+  .filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 11px;
+  }
+  th, td {
+    border: 1px solid #dee2e6;
+    padding: 6px 4px;
+    text-align: left;
+  }
+  th {
+    background-color: #f1f3f5;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .text-right { text-align: right; }
+  .text-center { text-align: center; }
+  .total-row {
+    font-weight: bold;
+    background-color: #e7f1ff;
+  }
+  .excluded-row {
+    opacity: 0.55;
+    background-color: #fafafa;
+  }
+  .badge-dikecualikan {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    color: #842029;
+    background-color: #f8d7da;
+    border-radius: 4px;
+    padding: 1px 4px;
+    margin-left: 2px;
+  }
+  .cat-summary-box {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 14px;
+  }
+  .cat-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .cat-summary-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #495057;
+  }
+  .cat-toggle-btns {
+    display: flex;
+    gap: 6px;
+  }
+  .btn-mini {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+    background-color: #ffffff;
+    color: #495057;
+    cursor: pointer;
+  }
+  .btn-mini:active {
+    background-color: #e9ecef;
+  }
+  .cat-summary-table {
+    margin-top: 0;
+    font-size: 12px;
+  }
+  .cat-summary-table th, .cat-summary-table td {
+    padding: 6px 6px;
+  }
+  .chk-kategori {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #0d6efd;
+  }
+  .btn-refresh {
+    background-color: #0d6efd;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  .btn-copy {
+    background-color: #0dcaf0;
+    color: #000;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+  .btn-dedup {
+    background-color: #fd7e14;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .btn-delete-range {
+    background-color: #dc3545;
+    padding: 11px;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .btn-del-row {
+    background: none;
+    border: none;
+    color: #dc3545;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0 3px;
+  }
+  .status-box {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    display: none;
+    white-space: pre-line;
+  }
+  .status-ok {
+    background-color: #d1e7dd;
+    color: #0f5132;
+    display: block;
+  }
+  .status-err {
+    background-color: #f8d7da;
+    color: #842029;
+    display: block;
+  }
+  .status-wait {
+    background-color: #fff3cd;
+    color: #664d03;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1 class="app-title">PERBELANJAAN KHATIMI</h1>
+
+  <h2 class="section-first">Tarikh</h2>
+  <input type="date" id="tarikh">
+
+  <h2>Perbelanjaan</h2>
+  <div id="senaraiBelanja"></div>
+  <button type="button" class="btn-plus" onclick="tambahBelanja()">+</button>
+
+  <div class="summary-box">
+    <div class="row jumlah-belanja">
+      <span>JUMLAH BELANJA:</span>
+      <span id="paparBelanja">RM 0.00</span>
+    </div>
+  </div>
+
+  <button type="button" id="btnSimpan" class="btn-action btn-save" onclick="simpanRekod()">Simpan Rekod</button>
+  <button type="button" class="btn-action btn-reset" onclick="resetBorang(true)">Kosongkan Semua</button>
+  <button type="button" class="btn-action btn-report" onclick="bukaLaporan()">Laporan</button>
+
+  <div id="statusBorang" class="status-box"></div>
+
+  <h2>Sumber Kewangan &amp; Baki Terkini</h2>
+  <div id="senaraiSumberKewangan"></div>
+  <div id="statusSumber" class="status-box"></div>
+
+  <div id="bahagianLaporan">
+    <h2>Laporan Perbelanjaan</h2>
+
+    <div class="preset-grid">
+      <button type="button" class="btn-preset" onclick="tetapTempoh('hariIni')">Hari Ini</button>
+      <button type="button" class="btn-preset" onclick="tetapTempoh('7hari')">7 Hari</button>
+      <button type="button" class="btn-preset" onclick="tetapTempoh('bulanIni')">Bulan Ini</button>
+    </div>
+
+    <div class="filter-grid">
+      <div>
+        <label for="tarikhDari">Dari</label>
+        <input type="date" id="tarikhDari" onchange="paparJadualLaporan()">
+      </div>
+      <div>
+        <label for="tarikhHingga">Hingga</label>
+        <input type="date" id="tarikhHingga" onchange="paparJadualLaporan()">
+      </div>
+    </div>
+
+    <div class="filter-grid">
+      <div>
+        <label for="tapisKategori">Kategori</label>
+        <select id="tapisKategori" onchange="paparJadualLaporan()">
+          <option value="">SEMUA KATEGORI</option>
+          <option value="BILL">BILL</option>
+          <option value="MAKANAN">MAKANAN</option>
+          <option value="PERALATAN">PERALATAN</option>
+          <option value="UTILITI">UTILITI</option>
+          <option value="MINYAK">MINYAK</option>
+          <option value="RUNCIT">RUNCIT</option>
+          <option value="SHOPEE">SHOPEE</option>
+          <option value="MAMA">MAMA</option>
+          <option value="KOMITMEN">KOMITMEN</option>
+          <option value="LAIN-LAIN">LAIN-LAIN</option>
+        </select>
+      </div>
+      <div>
+        <label for="tapisSumber">Sumber</label>
+        <select id="tapisSumber" onchange="paparJadualLaporan()">
+          <option value="">SEMUA SUMBER</option>
+          <option value="QR MBB ABAH">QR MBB ABAH</option>
+          <option value="QR AGROBNK">QR AGROBNK</option>
+          <option value="QR AFFINBNK">QR AFFINBNK</option>
+          <option value="PINDAH/KAD MBB ABAH">PINDAH/KAD MBB ABAH</option>
+          <option value="PINDAH/KAD AGROBNK">PINDAH/KAD AGROBNK</option>
+          <option value="PINDAH/KAD AFFINBNK">PINDAH/KAD AFFINBNK</option>
+          <option value="QR MBB MAMA">QR MBB MAMA</option>
+          <option value="PINDAH/MBB MAMA">PINDAH/MBB MAMA</option>
+          <option value="TUNAI">TUNAI</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-grid">
+      <div>
+        <label for="susunanJadual">Susun Mengikut</label>
+        <select id="susunanJadual" onchange="paparJadualLaporan()">
+          <option value="terbaharu">Tarikh Terbaharu</option>
+          <option value="terlama">Tarikh Terlama</option>
+          <option value="amaunTinggi">Amaun Tertinggi</option>
+          <option value="kategori">Kategori (A-Z)</option>
+          <option value="sumber">Sumber (A-Z)</option>
+        </select>
+      </div>
+      <div>
+        <label for="carianItem">Carian Kata Kunci</label>
+        <input type="text" id="carianItem" placeholder="Taip perkataan..." oninput="paparJadualLaporan()">
+      </div>
+    </div>
+
+    <button type="button" class="btn-action btn-refresh" onclick="segarSemulaDariSheets()">
+      Muat Semula Data Google Sheets
+    </button>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="text-center" style="width: 7%;">Bil.</th>
+          <th style="width: 17%;">Tarikh</th>
+          <th style="width: 19%;">Kategori</th>
+          <th style="width: 22%;">Diskripsi</th>
+          <th style="width: 14%;">Sumber</th>
+          <th class="text-right" style="width: 14%;">Amaun</th>
+          <th class="text-center" style="width: 7%;">Buang</th>
+        </tr>
+      </thead>
+      <tbody id="isiJadual"></tbody>
+    </table>
+
+    <div id="ringkasanKategori" class="cat-summary-box" style="display: none;">
+      <div class="cat-summary-header">
+        <span class="cat-summary-title">Ringkasan &amp; Pilihan Kiraan Kategori</span>
+        <div class="cat-toggle-btns">
+          <button type="button" class="btn-mini" onclick="setSemuaKategoriDikira(true)">Tanda Semua</button>
+          <button type="button" class="btn-mini" onclick="setSemuaKategoriDikira(false)">Nyahtanda Semua</button>
+        </div>
+      </div>
+      <table class="cat-summary-table">
+        <thead>
+          <tr>
+            <th class="text-center" style="width: 13%;">Kira</th>
+            <th>Kategori</th>
+            <th class="text-center" style="width: 16%;">Item</th>
+            <th class="text-right" style="width: 29%;">Jumlah (RM)</th>
+          </tr>
+        </thead>
+        <tbody id="isiRingkasanKategori"></tbody>
+      </table>
+    </div>
+
+    <button type="button" class="btn-action btn-copy" onclick="salinTeksLaporan()">
+      Salin Teks Laporan
+    </button>
+
+    <button type="button" class="btn-action btn-dedup" onclick="buangDataBertindih()">
+      Buang Data Bertindih
+    </button>
+
+    <button type="button" class="btn-action btn-delete-range" onclick="padamRekodMengikutTarikh()">
+      Padam Rekod (Dari - Hingga)
+    </button>
+
+    <div id="statusLaporan" class="status-box"></div>
+  </div>
+</div>
+
+<script>
+  const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxte5u7V8sAWs2vKkDz7HvpjLx_0C6G6fM8DyZiWX4B7kDJ8L1zJNcSlXPvJQC7Ym4gXg/exec';
+
+  const SENARAI_KATEGORI = [
+    'BILL',
+    'MAKANAN',
+    'PERALATAN',
+    'UTILITI',
+    'MINYAK',
+    'RUNCIT',
+    'SHOPEE',
+    'MAMA',
+    'KOMITMEN',
+    'LAIN-LAIN'
+  ];
+
+  const SENARAI_SUMBER_UTAMA = [
+    'MBB ABAH',
+    'AGROBANK',
+    'AFFINBANK',
+    'MBB MAMA'
+  ];
+
+  const PILIHAN_JENIS_SUMBER = [
+    { label: 'QR MBB ABAH', tolakDari: 'MBB ABAH' },
+    { label: 'QR AGROBNK', tolakDari: 'AGROBANK' },
+    { label: 'QR AFFINBNK', tolakDari: 'AFFINBANK' },
+    { label: 'PINDAH/KAD MBB ABAH', tolakDari: 'MBB ABAH' },
+    { label: 'PINDAH/KAD AGROBNK', tolakDari: 'AGROBANK' },
+    { label: 'PINDAH/KAD AFFINBNK', tolakDari: 'AFFINBANK' },
+    { label: 'QR MBB MAMA', tolakDari: 'MBB MAMA' },
+    { label: 'PINDAH/MBB MAMA', tolakDari: 'MBB MAMA' },
+    { label: 'TUNAI', tolakDari: null }
+  ];
+
+  let bilBelanja = 0;
+  let cacheRekod = [];
+  let danaMasukSumber = {
+    'MBB ABAH': 0,
+    'AGROBANK': 0,
+    'AFFINBANK': 0,
+    'MBB MAMA': 0
+  };
+  const kategoriDikecualikan = new Set();
+
+  // Baris tambahan modal (lebih daripada satu) bagi setiap sumber utama
+  const tambahanModal = {};
+  SENARAI_SUMBER_UTAMA.forEach(n => { tambahanModal[n] = [{ sumber: '', jumlah: '' }]; });
+
+  function dapatSumberDitolak(jenisSumber) {
+    const teks = String(jenisSumber || '').trim().toUpperCase();
+    const padanan = PILIHAN_JENIS_SUMBER.find(p => p.label.toUpperCase() === teks);
+    if (padanan) return padanan.tolakDari;
+    if (teks.includes('MBB ABAH')) return 'MBB ABAH';
+    if (teks.includes('AGROBNK') || teks.includes('AGROBANK')) return 'AGROBANK';
+    if (teks.includes('AFFINBNK') || teks.includes('AFFINBANK')) return 'AFFINBANK';
+    if (teks.includes('MBB MAMA')) return 'MBB MAMA';
+    return null;
+  }
+
+  function formatISO(objTarikh) {
+    const tahun = objTarikh.getFullYear();
+    const bulan = String(objTarikh.getMonth() + 1).padStart(2, '0');
+    const hari = String(objTarikh.getDate()).padStart(2, '0');
+    return `${tahun}-${bulan}-${hari}`;
+  }
+
+  function dapatTarikhSemasaTempatan() {
+    return formatISO(new Date());
+  }
+
+  function normalisasiNamaKategori(kat) {
+    const bersih = String(kat || 'LAIN-LAIN').trim().toUpperCase();
+    if (bersih === 'MAKAN') return 'MAKANAN';
+    return bersih || 'LAIN-LAIN';
+  }
+
+  function janaPilihanKategoriHTML(terpilih = 'BILL') {
+    return SENARAI_KATEGORI.map(k =>
+      `<option value="${k}"${k === terpilih ? ' selected' : ''}>${k}</option>`
+    ).join('');
+  }
+
+  function janaPilihanSumberHTML(terpilih = 'QR MBB ABAH') {
+    return PILIHAN_JENIS_SUMBER.map(p =>
+      `<option value="${p.label}"${p.label === terpilih ? ' selected' : ''}>${p.label}</option>`
+    ).join('');
+  }
+
+  function binaKotakItem(nombor, bolehBuang = false) {
+    const div = document.createElement('div');
+    div.className = 'item-box belanja-group';
+    div.innerHTML = `
+      <div class="item-header">
+        <label>Kategori ${nombor}</label>
+        ${bolehBuang ? `<button type="button" class="btn-remove-box" onclick="buangKotakItem(this)">✕ Buang</button>` : ''}
+      </div>
+      <select class="input-kategori">${janaPilihanKategoriHTML('BILL')}</select>
+      <label>Diskripsi ${nombor}</label>
+      <input type="text" class="input-diskripsi" placeholder="Masukkan diskripsi ${nombor}">
+      <label>Amaun ${nombor} (RM)</label>
+      <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
+      <label>Sumber ${nombor}</label>
+      <select class="input-sumber">${janaPilihanSumberHTML('QR MBB ABAH')}</select>
+    `;
+    return div;
+  }
+
+  function kemasKiniLabelItem() {
+    const kumpulan = document.querySelectorAll('.belanja-group');
+    kumpulan.forEach((box, idx) => {
+      const no = idx + 1;
+      const lblKategori = box.querySelector('.item-header label');
+      const labels = box.querySelectorAll('label');
+      const inpDiskripsi = box.querySelector('.input-diskripsi');
+
+      if (lblKategori) lblKategori.textContent = `Kategori ${no}`;
+      if (labels[1]) labels[1].textContent = `Diskripsi ${no}`;
+      if (inpDiskripsi) inpDiskripsi.placeholder = `Masukkan diskripsi ${no}`;
+      if (labels[2]) labels[2].textContent = `Amaun ${no} (RM)`;
+      if (labels[3]) labels[3].textContent = `Sumber ${no}`;
+    });
+    bilBelanja = kumpulan.length;
+  }
+
+  function buangKotakItem(btn) {
+    const box = btn.closest('.belanja-group');
+    if (box) {
+      box.remove();
+      kemasKiniLabelItem();
+      kira();
+    }
+  }
+
+  function kiraTerbelanjaMengikutSumber() {
+    const terbelanja = {
+      'MBB ABAH': 0,
+      'AGROBANK': 0,
+      'AFFINBANK': 0,
+      'MBB MAMA': 0
+    };
+    cacheRekod.forEach(r => {
+      const sumberSasaran = dapatSumberDitolak(r.sumber);
+      if (sumberSasaran && terbelanja[sumberSasaran] !== undefined) {
+        terbelanja[sumberSasaran] += Number(r.amaun) || 0;
+      }
+    });
+    return terbelanja;
+  }
+
+  // ===== Sumber Kewangan & Baki Terkini (versi baharu) =====
+
+  function esc(t) {
+    return String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function jumlahTambahan(nama) {
+    return tambahanModal[nama].reduce((s, b) => s + (parseFloat(b.jumlah) || 0), 0);
+  }
+
+  function binaBarisModalHTML(i, nama) {
+    return tambahanModal[nama].map((b, j) => `
+      <div class="modal-row">
+        <span class="modal-no">${j + 1}.</span>
+        <input type="text" placeholder="cth: Gaji / Duit Raya" value="${esc(b.sumber)}"
+          oninput="ubahBarisModal(${i},${j},'sumber',this.value)">
+        <input type="number" step="0.01" inputmode="decimal" placeholder="0.00" value="${esc(b.jumlah)}"
+          oninput="ubahBarisModal(${i},${j},'jumlah',this.value)">
+        <button type="button" class="btn-del-row" onclick="buangBarisModal(${i},${j})">✕</button>
+      </div>`).join('');
+  }
+
+  function paparKadSumberKewangan() {
+    const bekas = document.getElementById('senaraiSumberKewangan');
+    const terbelanja = kiraTerbelanjaMengikutSumber();
+
+    bekas.innerHTML = SENARAI_SUMBER_UTAMA.map((nama, i) => {
+      const masuk = Number(danaMasukSumber[nama]) || 0;
+      const keluar = Number(terbelanja[nama]) || 0;
+      const baki = masuk + jumlahTambahan(nama) - keluar;
+      const kelasBaki = baki < 0 ? 'sumber-baki negatif' : 'sumber-baki';
+
+      return `
+        <div class="sumber-card">
+          <div class="sumber-card-top">
+            <span class="sumber-nama">${nama}</span>
+            <span class="${kelasBaki}" id="baki_${i}">Baki: RM ${baki.toFixed(2)}</span>
+          </div>
+          <div class="sumber-grid">
+            <div>
+              <label>Masuk / Modal (RM)</label>
+              <input type="number" step="0.01" inputmode="decimal" id="dana_${i}"
+                value="${masuk.toFixed(2)}" oninput="kemasKiniPratontonSumber()">
+            </div>
+            <div>
+              <label>Terbelanja (RM)</label>
+              <div class="sumber-terbelanja-box">RM ${keluar.toFixed(2)}</div>
+            </div>
+          </div>
+          <div class="tambah-modal-wrap">
+            <label>Tambah Modal Baharu</label>
+            <div class="modal-head">
+              <span>Bil</span><span>Sumber Modal</span><span>Jumlah RM</span><span></span>
+            </div>
+            <div id="barisModal_${i}">${binaBarisModalHTML(i, nama)}</div>
+            <button type="button" class="btn-plus-modal" onclick="tambahBarisModal(${i})">+</button>
+            <button type="button" class="btn-action btn-kemaskini" onclick="simpanDanaSumber()">KEMASKINI</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function tambahBarisModal(i) {
+    const nama = SENARAI_SUMBER_UTAMA[i];
+    tambahanModal[nama].push({ sumber: '', jumlah: '' });
+    document.getElementById('barisModal_' + i).innerHTML = binaBarisModalHTML(i, nama);
+  }
+
+  function buangBarisModal(i, j) {
+    const nama = SENARAI_SUMBER_UTAMA[i];
+    tambahanModal[nama].splice(j, 1);
+    if (tambahanModal[nama].length === 0) tambahanModal[nama].push({ sumber: '', jumlah: '' });
+    document.getElementById('barisModal_' + i).innerHTML = binaBarisModalHTML(i, nama);
+    kemasKiniPratontonSumber();
+  }
+
+  function ubahBarisModal(i, j, medan, nilai) {
+    tambahanModal[SENARAI_SUMBER_UTAMA[i]][j][medan] = nilai;
+    kemasKiniPratontonSumber();
+  }
+
+  function kemasKiniPratontonSumber() {
+    const terbelanja = kiraTerbelanjaMengikutSumber();
+    SENARAI_SUMBER_UTAMA.forEach((nama, i) => {
+      const inp = document.getElementById('dana_' + i);
+      const modalAsas = inp ? (parseFloat(inp.value) || 0) : (Number(danaMasukSumber[nama]) || 0);
+      const baki = modalAsas + jumlahTambahan(nama) - (Number(terbelanja[nama]) || 0);
+      const lbl = document.getElementById('baki_' + i);
+      if (lbl) {
+        lbl.textContent = `Baki: RM ${baki.toFixed(2)}`;
+        lbl.className = baki < 0 ? 'sumber-baki negatif' : 'sumber-baki';
+      }
+    });
+  }
+
+  async function simpanDanaSumber() {
+    // Semak: baris yang ada jumlah mesti ada sumber modal
+    for (const nama of SENARAI_SUMBER_UTAMA) {
+      for (const b of tambahanModal[nama]) {
+        if ((parseFloat(b.jumlah) || 0) !== 0 && !String(b.sumber).trim()) {
+          tunjukStatus('statusSumber', `Sila isi "Sumber Modal" untuk ${nama}.`, 'err');
+          return;
+        }
+      }
+    }
+
+    const butiranModal = [];
+    const senaraiPayload = SENARAI_SUMBER_UTAMA.map((nama, i) => {
+      const inp = document.getElementById('dana_' + i);
+      const modalAsas = inp ? (parseFloat(inp.value) || 0) : (Number(danaMasukSumber[nama]) || 0);
+      tambahanModal[nama].forEach(b => {
+        const j = parseFloat(b.jumlah) || 0;
+        if (j !== 0) {
+          butiranModal.push({
+            tarikh: dapatTarikhSemasaTempatan(),
+            sumberDana: nama,
+            sumberModal: String(b.sumber).trim(),
+            jumlah: j
+          });
+        }
+      });
+      return { sumber: nama, danaMasuk: Number((modalAsas + jumlahTambahan(nama)).toFixed(2)) };
+    });
+
+    const btns = document.querySelectorAll('.btn-kemaskini');
+    btns.forEach(b => b.disabled = true);
+    tunjukStatus('statusSumber', 'Mengemas kini modal ke Google Sheets...', 'wait');
+
+    try {
+      await panggilSheetsPOST({ action: 'saveSumber', sumberDana: senaraiPayload, butiranModal: butiranModal });
+      senaraiPayload.forEach(p => { danaMasukSumber[p.sumber] = p.danaMasuk; });
+      SENARAI_SUMBER_UTAMA.forEach(n => { tambahanModal[n] = [{ sumber: '', jumlah: '' }]; });
+      paparKadSumberKewangan();
+      tunjukStatus('statusSumber', 'Modal & baki terkini berjaya dikemas kini.');
+    } catch (err) {
+      tunjukStatus('statusSumber', 'Gagal mengemas kini: ' + err.message, 'err');
+    } finally {
+      document.querySelectorAll('.btn-kemaskini').forEach(b => b.disabled = false);
+    }
+  }
+
+  // ===== Akhir bahagian Sumber Kewangan =====
+
+  window.onload = function() {
+    const hariIni = dapatTarikhSemasaTempatan();
+    document.getElementById('tarikh').value = hariIni;
+    document.getElementById('tarikhDari').value = hariIni;
+    document.getElementById('tarikhHingga').value = hariIni;
+    resetBorang(false);
+    paparKadSumberKewangan();
+    muatAwalSenyap();
+  };
+
+  async function muatAwalSenyap() {
+    try {
+      await panggilSheetsGET();
+      paparKadSumberKewangan();
+    } catch (e) {
+      // Abaikan ralat awal senyap jika luar talian
+    }
+  }
+
+  function tetapTempoh(jenis) {
+    const kini = new Date();
+    const hariIni = formatISO(kini);
+    let dari = hariIni;
+    let hingga = hariIni;
+
+    if (jenis === '7hari') {
+      const mula = new Date(kini);
+      mula.setDate(kini.getDate() - 6);
+      dari = formatISO(mula);
+    } else if (jenis === 'bulanIni') {
+      const awalBulan = new Date(kini.getFullYear(), kini.getMonth(), 1);
+      dari = formatISO(awalBulan);
+    }
+
+    document.getElementById('tarikhDari').value = dari;
+    document.getElementById('tarikhHingga').value = hingga;
+    paparJadualLaporan();
+  }
+
+  function tunjukStatus(idElemen, mesej, jenis = 'ok') {
+    const el = document.getElementById(idElemen);
+    el.textContent = mesej;
+    if (jenis === 'err') {
+      el.className = 'status-box status-err';
+    } else if (jenis === 'wait') {
+      el.className = 'status-box status-wait';
+    } else {
+      el.className = 'status-box status-ok';
+    }
+  }
+
+  function normalisasiTarikhISO(nilai) {
+    if (!nilai) return '';
+    const str = String(nilai).trim();
+    const matchISO = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (matchISO) {
+      const yyyy = matchISO[1];
+      const mm = matchISO[2].padStart(2, '0');
+      const dd = matchISO[3].padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    const matchDMY = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (matchDMY) {
+      const dd = matchDMY[1].padStart(2, '0');
+      const mm = matchDMY[2].padStart(2, '0');
+      const yyyy = matchDMY[3];
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    return str;
+  }
+
+  function formatTarikhRingkas(tarikhISO) {
+    const iso = normalisasiTarikhISO(tarikhISO);
+    const bahagian = iso.split('-');
+    return bahagian.length === 3
+      ? `${bahagian[2]}/${bahagian[1]}/${bahagian[0].slice(2)}`
+      : iso;
+  }
+
+  function panggilJSONP(payloadObj) {
+    return new Promise((resolve, reject) => {
+      const namaCallback = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+      const scriptEl = document.createElement('script');
+      const timer = setTimeout(() => {
+        bersih();
+        reject(new Error('Masa tamat sambungan ke Google Sheets.'));
+      }, 15000);
+
+      function bersih() {
+        clearTimeout(timer);
+        if (window[namaCallback]) {
+          delete window[namaCallback];
+        }
+        if (scriptEl && scriptEl.parentNode) {
+          scriptEl.parentNode.removeChild(scriptEl);
+        }
+      }
+
+      window[namaCallback] = function(res) {
+        bersih();
+        if (!res || res.status !== 'ok') {
+          reject(new Error((res && res.message) || 'Ralat dari Google Sheets.'));
+        } else {
+          resolve(res);
+        }
+      };
+
+      const encodedPayload = encodeURIComponent(JSON.stringify(payloadObj));
+      const pemisah = WEB_APP_URL.includes('?') ? '&' : '?';
+      scriptEl.src = `${WEB_APP_URL}${pemisah}callback=${namaCallback}&payload=${encodedPayload}&_=${Date.now()}`;
+      scriptEl.onerror = function() {
+        bersih();
+        reject(new Error('Gagal memuatkan skrip Google Apps Script. Semak tetapan akses Web App.'));
+      };
+      document.body.appendChild(scriptEl);
+    });
+  }
+
+  async function panggilSheetsGET() {
+    const res = await panggilJSONP({ action: 'list' });
+    cacheRekod = (res.data || []).map(r => ({
+      id: String(r.id),
+      tarikh: normalisasiTarikhISO(r.tarikh),
+      kategori: normalisasiNamaKategori(r.kategori),
+      diskripsi: String(r.diskripsi || '').trim(),
+      amaun: Number(r.amaun) || 0,
+      sumber: String(r.sumber || 'TUNAI').trim().toUpperCase()
+    }));
+
+    if (Array.isArray(res.sumberDana)) {
+      res.sumberDana.forEach(item => {
+        const nama = String(item.sumber || '').trim().toUpperCase();
+        if (nama && danaMasukSumber[nama] !== undefined) {
+          danaMasukSumber[nama] = Number(item.danaMasuk) || 0;
+        }
+      });
+    }
+    return cacheRekod;
+  }
+
+  async function panggilSheetsPOST(payload) {
+    return await panggilJSONP(payload);
+  }
+
+  function tambahBelanja() {
+    bilBelanja++;
+    const bekas = document.getElementById('senaraiBelanja');
+    bekas.appendChild(binaKotakItem(bilBelanja, true));
+  }
+
+  function kira() {
+    let jumlahBelanja = 0;
+    document.querySelectorAll('.input-amaun').forEach(input => {
+      jumlahBelanja += parseFloat(input.value) || 0;
+    });
+    document.getElementById('paparBelanja').innerText = 'RM ' + jumlahBelanja.toFixed(2);
+  }
+
+  function resetBorang(tunjukMesej = true) {
+    bilBelanja = 1;
+    document.getElementById('tarikh').value = dapatTarikhSemasaTempatan();
+    const bekas = document.getElementById('senaraiBelanja');
+    bekas.innerHTML = '';
+    bekas.appendChild(binaKotakItem(1, false));
+    kira();
+    if (tunjukMesej) {
+      tunjukStatus('statusBorang', 'Borang telah dikosongkan.');
+    }
+  }
+
+  async function simpanRekod() {
+    const tarikh = normalisasiTarikhISO(document.getElementById('tarikh').value);
+    if (!tarikh) {
+      tunjukStatus('statusBorang', 'Sila pilih tarikh terlebih dahulu.', 'err');
+      return;
+    }
+
+    const kumpulanBelanja = document.querySelectorAll('.belanja-group');
+    const itemUntukDihantar = [];
+
+    kumpulanBelanja.forEach((kumpulan, idx) => {
+      const kategori = normalisasiNamaKategori(kumpulan.querySelector('.input-kategori').value);
+      const diskripsi = kumpulan.querySelector('.input-diskripsi').value.trim();
+      const amaun = parseFloat(kumpulan.querySelector('.input-amaun').value) || 0;
+      const sumber = String(kumpulan.querySelector('.input-sumber').value || 'TUNAI').trim().toUpperCase();
+
+      if (diskripsi !== '' || amaun > 0) {
+        itemUntukDihantar.push({
+          id: `${Date.now()}-${idx}-${Math.floor(Math.random() * 10000)}`,
+          tarikh: tarikh,
+          kategori: kategori,
+          diskripsi: diskripsi || '-',
+          amaun: amaun,
+          sumber: sumber
+        });
+      }
+    });
+
+    if (itemUntukDihantar.length === 0) {
+      tunjukStatus('statusBorang', 'Tiada diskripsi atau amaun diisi untuk disimpan.', 'err');
+      return;
+    }
+
+    const btn = document.getElementById('btnSimpan');
+    btn.disabled = true;
+    tunjukStatus('statusBorang', 'Menyimpan rekod ke Google Sheets...', 'wait');
+
+    try {
+      await panggilSheetsPOST({ action: 'add', items: itemUntukDihantar });
+      cacheRekod = cacheRekod.concat(itemUntukDihantar);
+      resetBorang(false);
+      paparKadSumberKewangan();
+      tunjukStatus('statusBorang', `${itemUntukDihantar.length} rekod berjaya disimpan & baki sumber dikemas kini.`);
+      if (document.getElementById('bahagianLaporan').style.display === 'block') {
+        paparJadualLaporan();
+      }
+    } catch (err) {
+      tunjukStatus('statusBorang', 'Gagal menyimpan ke Google Sheets: ' + err.message, 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function bukaLaporan() {
+    const bahagian = document.getElementById('bahagianLaporan');
+    if (bahagian.style.display === 'none' || bahagian.style.display === '') {
+      bahagian.style.display = 'block';
+      bahagian.scrollIntoView({ behavior: 'smooth' });
+      await segarSemulaDariSheets();
+    } else {
+      bahagian.style.display = 'none';
+    }
+  }
+
+  async function segarSemulaDariSheets() {
+    const tbody = document.getElementById('isiJadual');
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center">Memuatkan data dari Google Sheets...</td></tr>`;
+    document.getElementById('ringkasanKategori').style.display = 'none';
+    tunjukStatus('statusLaporan', 'Menyegerakkan data dari Google Sheets...', 'wait');
+
+    try {
+      await panggilSheetsGET();
+      paparKadSumberKewangan();
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', `Data terkini dimuatkan (${cacheRekod.length} jumlah rekod dalam Sheets).`);
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center">Gagal memuatkan data.</td></tr>`;
+      tunjukStatus('statusLaporan', 'Ralat sambungan Google Sheets: ' + err.message, 'err');
+    }
+  }
+
+  function kategoriSedangDikira(kat) {
+    return !kategoriDikecualikan.has(normalisasiNamaKategori(kat));
+  }
+
+  function togolKiraanKategori(kat, dikira) {
+    const nama = normalisasiNamaKategori(kat);
+    if (dikira) {
+      kategoriDikecualikan.delete(nama);
+    } else {
+      kategoriDikecualikan.add(nama);
+    }
+    paparJadualLaporan();
+  }
+
+  function setSemuaKategoriDikira(dikira) {
+    if (dikira) {
+      kategoriDikecualikan.clear();
+    } else {
+      SENARAI_KATEGORI.forEach(k => kategoriDikecualikan.add(k));
+      cacheRekod.forEach(r => kategoriDikecualikan.add(normalisasiNamaKategori(r.kategori)));
+    }
+    paparJadualLaporan();
+  }
+
+  function dapatRekodDitapis() {
+    const dari = normalisasiTarikhISO(document.getElementById('tarikhDari').value);
+    const hingga = normalisasiTarikhISO(document.getElementById('tarikhHingga').value);
+    const kategoriDipilih = document.getElementById('tapisKategori').value.trim().toUpperCase();
+    const sumberDipilih = document.getElementById('tapisSumber').value.trim().toUpperCase();
+    const kataKunci = document.getElementById('carianItem').value.trim().toLowerCase();
+    const susunan = document.getElementById('susunanJadual').value;
+
+    const ditapis = cacheRekod.filter(r => {
+      const tarikhRekod = normalisasiTarikhISO(r.tarikh);
+      const katRekod = normalisasiNamaKategori(r.kategori);
+      const sumberRekod = String(r.sumber || 'TUNAI').trim().toUpperCase();
+
+      if (dari && tarikhRekod < dari) return false;
+      if (hingga && tarikhRekod > hingga) return false;
+      if (kategoriDipilih && katRekod !== kategoriDipilih) return false;
+      if (sumberDipilih && sumberRekod !== sumberDipilih) return false;
+      if (
+        kataKunci &&
+        !String(r.diskripsi).toLowerCase().includes(kataKunci) &&
+        !katRekod.toLowerCase().includes(kataKunci) &&
+        !sumberRekod.toLowerCase().includes(kataKunci)
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    ditapis.sort((a, b) => {
+      if (susunan === 'terlama') {
+        return normalisasiTarikhISO(a.tarikh).localeCompare(normalisasiTarikhISO(b.tarikh));
+      }
+      if (susunan === 'amaunTinggi') {
+        return (Number(b.amaun) || 0) - (Number(a.amaun) || 0);
+      }
+      if (susunan === 'kategori') {
+        return normalisasiNamaKategori(a.kategori).localeCompare(normalisasiNamaKategori(b.kategori));
+      }
+      if (susunan === 'sumber') {
+        return String(a.sumber || '').localeCompare(String(b.sumber || ''));
+      }
+      return normalisasiTarikhISO(b.tarikh).localeCompare(normalisasiTarikhISO(a.tarikh));
+    });
+
+    return ditapis;
+  }
+
+  function paparRingkasanKategori(rekodDitapis, jumlahDikira) {
+    const kotak = document.getElementById('ringkasanKategori');
+    const tbody = document.getElementById('isiRingkasanKategori');
+
+    if (rekodDitapis.length === 0) {
+      kotak.style.display = 'none';
+      tbody.innerHTML = '';
+      return;
+    }
+
+    const peta = new Map();
+    rekodDitapis.forEach(r => {
+      const kat = normalisasiNamaKategori(r.kategori);
+      const semasa = peta.get(kat) || { bil: 0, jumlah: 0 };
+      semasa.bil += 1;
+      semasa.jumlah += Number(r.amaun) || 0;
+      peta.set(kat, semasa);
+    });
+
+    const barisUrutan = Array.from(peta.entries()).sort((a, b) => b[1].jumlah - a[1].jumlah);
+    tbody.innerHTML = barisUrutan.map(([kat, info]) => {
+      const dikira = kategoriSedangDikira(kat);
+      return `
+        <tr class="${dikira ? '' : 'excluded-row'}">
+          <td class="text-center">
+            <input type="checkbox" class="chk-kategori" ${dikira ? 'checked' : ''} onchange="togolKiraanKategori('${kat.replace(/'/g, "\\'")}', this.checked)">
+          </td>
+          <td>${kat}</td>
+          <td class="text-center">${info.bil}</td>
+          <td class="text-right">${info.jumlah.toFixed(2)}</td>
+        </tr>
+      `;
+    }).join('') + `
+      <tr class="total-row">
+        <td colspan="3" class="text-right">JUMLAH DIKIRA</td>
+        <td class="text-right">${jumlahDikira.toFixed(2)}</td>
+      </tr>
+    `;
+
+    kotak.style.display = 'block';
+  }
+
+  function paparJadualLaporan() {
+    const tbody = document.getElementById('isiJadual');
+    tbody.innerHTML = '';
+
+    const rekodDitapis = dapatRekodDitapis();
+
+    if (rekodDitapis.length === 0) {
+      paparRingkasanKategori([], 0);
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center">Tiada rekod ditemui.</td></tr>`;
+      return;
+    }
+
+    let jumlahDikira = 0;
+
+    rekodDitapis.forEach((r, index) => {
+      const nilai = Number(r.amaun) || 0;
+      const kat = normalisasiNamaKategori(r.kategori);
+      const sumber = String(r.sumber || 'TUNAI').trim().toUpperCase();
+      const dikira = kategoriSedangDikira(kat);
+      if (dikira) {
+        jumlahDikira += nilai;
+      }
+
+      const tarikhRingkas = formatTarikhRingkas(r.tarikh);
+      const labelKecuali = dikira ? '' : `<span class="badge-dikecualikan">Dikecualikan</span>`;
+
+      const tr = document.createElement('tr');
+      tr.className = dikira ? '' : 'excluded-row';
+      tr.innerHTML = `
+        <td class="text-center">${index + 1}</td>
+        <td>${tarikhRingkas}</td>
+        <td>${kat}${labelKecuali}</td>
+        <td>${r.diskripsi}</td>
+        <td>${sumber}</td>
+        <td class="text-right">${nilai.toFixed(2)}</td>
+        <td class="text-center"><button type="button" class="btn-del-row" onclick="padamSatuRekod('${r.id}')">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    paparRingkasanKategori(rekodDitapis, jumlahDikira);
+
+    const trJumlah = document.createElement('tr');
+    trJumlah.className = 'total-row';
+    trJumlah.innerHTML = `
+      <td colspan="5" class="text-right">JUMLAH</td>
+      <td class="text-right">${jumlahDikira.toFixed(2)}</td>
+      <td></td>
+    `;
+    tbody.appendChild(trJumlah);
+  }
+
+  function salinTeksLaporan() {
+    const dari = normalisasiTarikhISO(document.getElementById('tarikhDari').value) || '-';
+    const hingga = normalisasiTarikhISO(document.getElementById('tarikhHingga').value) || '-';
+    const kategoriDipilih = document.getElementById('tapisKategori').value;
+    const sumberDipilih = document.getElementById('tapisSumber').value;
+    const kataKunci = document.getElementById('carianItem').value.trim();
+    const rekodDitapis = dapatRekodDitapis();
+
+    if (rekodDitapis.length === 0) {
+      tunjukStatus('statusLaporan', 'Tiada rekod dalam tapisan semasa untuk disalin.', 'err');
+      return;
+    }
+
+    let jumlahDikira = 0;
+    const baris = rekodDitapis.map((r, i) => {
+      const nilai = Number(r.amaun) || 0;
+      const kat = normalisasiNamaKategori(r.kategori);
+      const sumber = String(r.sumber || 'TUNAI').trim().toUpperCase();
+      const dikira = kategoriSedangDikira(kat);
+      if (dikira) {
+        jumlahDikira += nilai;
+      }
+      const statusTanda = dikira ? '' : ' [Dikecualikan]';
+      return `${i + 1}. [${formatTarikhRingkas(r.tarikh)}] [${kat}] ${r.diskripsi} (${sumber}) — RM ${nilai.toFixed(2)}${statusTanda}`;
+    });
+
+    const teks = [
+      'LAPORAN PERBELANJAAN KHATIMI',
+      `Tempoh: ${dari} hingga ${hingga}`,
+      kategoriDipilih ? `Kategori: ${kategoriDipilih}` : null,
+      sumberDipilih ? `Sumber: ${sumberDipilih}` : null,
+      kataKunci ? `Carian: "${kataKunci}"` : null,
+      '------------------------',
+      ...baris,
+      '------------------------',
+      `JUMLAH DIKIRA: RM ${jumlahDikira.toFixed(2)}`
+    ].filter(Boolean).join('\n');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(teks)
+        .then(() => tunjukStatus('statusLaporan', `${rekodDitapis.length} rekod laporan berjaya disalin ke papan keratan.`))
+        .catch(() => salinFallback(teks, rekodDitapis.length));
+    } else {
+      salinFallback(teks, rekodDitapis.length);
+    }
+  }
+
+  function salinFallback(teks, bilangan) {
+    const textarea = document.createElement('textarea');
+    textarea.value = teks;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      tunjukStatus('statusLaporan', `${bilangan} rekod laporan berjaya disalin.`);
+    } catch (e) {
+      tunjukStatus('statusLaporan', 'Gagal menyalin teks secara automatik.', 'err');
+    }
+    document.body.removeChild(textarea);
+  }
+
+  async function padamSatuRekod(idSasaran) {
+    tunjukStatus('statusLaporan', 'Memadam rekod dalam Google Sheets...', 'wait');
+    try {
+      await panggilSheetsPOST({ action: 'deleteOne', id: idSasaran });
+      cacheRekod = cacheRekod.filter(r => String(r.id) !== String(idSasaran));
+      paparKadSumberKewangan();
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', 'Satu baris rekod telah dipadam & baki sumber dikemas kini.');
+    } catch (err) {
+      tunjukStatus('statusLaporan', 'Gagal memadam rekod: ' + err.message, 'err');
+    }
+  }
+
+  async function buangDataBertindih() {
+    tunjukStatus('statusLaporan', 'Menyemak data bertindih dalam Google Sheets...', 'wait');
+    try {
+      const hasil = await panggilSheetsPOST({ action: 'dedup' });
+      if (hasil.bertindih === 0) {
+        tunjukStatus('statusLaporan', 'Tiada data bertindih ditemui.');
+        return;
+      }
+      await panggilSheetsGET();
+      paparKadSumberKewangan();
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', `${hasil.bertindih} rekod bertindih telah dibuang daripada Google Sheets.`);
+    } catch (err) {
+      tunjukStatus('statusLaporan', 'Gagal mengemas kini rekod: ' + err.message, 'err');
+    }
+  }
+
+  async function padamRekodMengikutTarikh() {
+    const dari = normalisasiTarikhISO(document.getElementById('tarikhDari').value);
+    const hingga = normalisasiTarikhISO(document.getElementById('tarikhHingga').value);
+
+    if (!dari || !hingga) {
+      tunjukStatus('statusLaporan', 'Sila pilih tarikh Dari dan Hingga terlebih dahulu.', 'err');
+      return;
+    }
+
+    if (dari > hingga) {
+      tunjukStatus('statusLaporan', 'Tarikh Dari tidak boleh melebihi tarikh Hingga.', 'err');
+      return;
+    }
+
+    tunjukStatus('statusLaporan', `Memadam rekod dari ${dari} hingga ${hingga}...`, 'wait');
+    try {
+      const hasil = await panggilSheetsPOST({ action: 'deleteRange', dari: dari, hingga: hingga });
+      if (hasil.dipadam === 0) {
+        tunjukStatus('statusLaporan', `Tiada rekod ditemui dari ${dari} hingga ${hingga} untuk dipadam.`, 'err');
+        return;
+      }
+      await panggilSheetsGET();
+      paparKadSumberKewangan();
+      paparJadualLaporan();
+      tunjukStatus('statusLaporan', `${hasil.dipadam} rekod dari ${dari} hingga ${hingga} telah dipadam daripada Google Sheets.`);
+    } catch (err) {
+      tunjukStatus('statusLaporan', 'Gagal memadam rekod: ' + err.message, 'err');
+    }
+  }
+</script>
+
+</body>
+</html>
