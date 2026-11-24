@@ -153,8 +153,48 @@
     color: #495057;
     text-align: right;
   }
-  .btn-sumber-save {
-    background-color: #0a58ca;
+  .tambah-modal-wrap {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #dee2e6;
+  }
+  .tambah-modal-wrap input {
+    margin-bottom: 0;
+    padding: 8px 10px;
+    font-size: 14px;
+    background-color: #fffdf5;
+    border-color: #ffe69c;
+  }
+
+  .modal-head, .modal-row {
+    display: grid;
+    grid-template-columns: 22px 1fr 95px 26px;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .modal-head {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6c757d;
+    text-transform: uppercase;
+  }
+  .modal-no { font-size: 13px; font-weight: 700; color: #495057; }
+  .modal-row input { margin-bottom: 0; }
+  .btn-plus-modal {
+    width: 100%;
+    padding: 7px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #b58100;
+    background-color: #fff8e1;
+    border: 1px dashed #ffc107;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 2px 0 8px;
+  }
+  .btn-kemaskini {
+    background-color: #198754;
     padding: 11px;
     font-size: 14px;
     margin-top: 4px;
@@ -402,9 +442,6 @@
 
   <h2>Sumber Kewangan &amp; Baki Terkini</h2>
   <div id="senaraiSumberKewangan"></div>
-  <button type="button" id="btnSimpanSumber" class="btn-action btn-sumber-save" onclick="simpanDanaSumber()">
-    Simpan Dana Masuk Sumber
-  </button>
   <div id="statusSumber" class="status-box"></div>
 
   <div id="bahagianLaporan">
@@ -579,6 +616,10 @@
   };
   const kategoriDikecualikan = new Set();
 
+  // Baris tambahan modal (lebih daripada satu) bagi setiap sumber utama
+  const tambahanModal = {};
+  SENARAI_SUMBER_UTAMA.forEach(n => { tambahanModal[n] = [{ sumber: '', jumlah: '' }]; });
+
   function dapatSumberDitolak(jenisSumber) {
     const teks = String(jenisSumber || '').trim().toUpperCase();
     const padanan = PILIHAN_JENIS_SUMBER.find(p => p.label.toUpperCase() === teks);
@@ -680,84 +721,149 @@
     return terbelanja;
   }
 
+  // ===== Sumber Kewangan & Baki Terkini (versi baharu) =====
+
+  function esc(t) {
+    return String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function jumlahTambahan(nama) {
+    return tambahanModal[nama].reduce((s, b) => s + (parseFloat(b.jumlah) || 0), 0);
+  }
+
+  function binaBarisModalHTML(i, nama) {
+    return tambahanModal[nama].map((b, j) => `
+      <div class="modal-row">
+        <span class="modal-no">${j + 1}.</span>
+        <input type="text" placeholder="cth: Gaji / Duit Raya" value="${esc(b.sumber)}"
+          oninput="ubahBarisModal(${i},${j},'sumber',this.value)">
+        <input type="number" step="0.01" inputmode="decimal" placeholder="0.00" value="${esc(b.jumlah)}"
+          oninput="ubahBarisModal(${i},${j},'jumlah',this.value)">
+        <button type="button" class="btn-del-row" onclick="buangBarisModal(${i},${j})">✕</button>
+      </div>`).join('');
+  }
+
   function paparKadSumberKewangan() {
     const bekas = document.getElementById('senaraiSumberKewangan');
     const terbelanja = kiraTerbelanjaMengikutSumber();
 
-    bekas.innerHTML = SENARAI_SUMBER_UTAMA.map(nama => {
+    bekas.innerHTML = SENARAI_SUMBER_UTAMA.map((nama, i) => {
       const masuk = Number(danaMasukSumber[nama]) || 0;
       const keluar = Number(terbelanja[nama]) || 0;
-      const baki = masuk - keluar;
+      const baki = masuk + jumlahTambahan(nama) - keluar;
       const kelasBaki = baki < 0 ? 'sumber-baki negatif' : 'sumber-baki';
 
       return `
         <div class="sumber-card">
           <div class="sumber-card-top">
             <span class="sumber-nama">${nama}</span>
-            <span class="${kelasBaki}">Baki: RM ${baki.toFixed(2)}</span>
+            <span class="${kelasBaki}" id="baki_${i}">Baki: RM ${baki.toFixed(2)}</span>
           </div>
           <div class="sumber-grid">
             <div>
-              <label for="dana_${nama.replace(/\s+/g, '_')}">Masuk / Modal (RM)</label>
-              <input
-                type="number"
-                step="0.01"
-                inputmode="decimal"
-                id="dana_${nama.replace(/\s+/g, '_')}"
-                data-sumber="${nama}"
-                value="${masuk.toFixed(2)}"
-                oninput="kemasKiniPratontonSumber()">
+              <label>Masuk / Modal (RM)</label>
+              <input type="number" step="0.01" inputmode="decimal" id="dana_${i}"
+                value="${masuk.toFixed(2)}" oninput="kemasKiniPratontonSumber()">
             </div>
             <div>
               <label>Terbelanja (RM)</label>
               <div class="sumber-terbelanja-box">RM ${keluar.toFixed(2)}</div>
             </div>
           </div>
-        </div>
-      `;
+          <div class="tambah-modal-wrap">
+            <label>Tambah Modal Baharu</label>
+            <div class="modal-head">
+              <span>Bil</span><span>Sumber Modal</span><span>Jumlah RM</span><span></span>
+            </div>
+            <div id="barisModal_${i}">${binaBarisModalHTML(i, nama)}</div>
+            <button type="button" class="btn-plus-modal" onclick="tambahBarisModal(${i})">+</button>
+            <button type="button" class="btn-action btn-kemaskini" onclick="simpanDanaSumber()">KEMASKINI</button>
+          </div>
+        </div>`;
     }).join('');
+  }
+
+  function tambahBarisModal(i) {
+    const nama = SENARAI_SUMBER_UTAMA[i];
+    tambahanModal[nama].push({ sumber: '', jumlah: '' });
+    document.getElementById('barisModal_' + i).innerHTML = binaBarisModalHTML(i, nama);
+  }
+
+  function buangBarisModal(i, j) {
+    const nama = SENARAI_SUMBER_UTAMA[i];
+    tambahanModal[nama].splice(j, 1);
+    if (tambahanModal[nama].length === 0) tambahanModal[nama].push({ sumber: '', jumlah: '' });
+    document.getElementById('barisModal_' + i).innerHTML = binaBarisModalHTML(i, nama);
+    kemasKiniPratontonSumber();
+  }
+
+  function ubahBarisModal(i, j, medan, nilai) {
+    tambahanModal[SENARAI_SUMBER_UTAMA[i]][j][medan] = nilai;
+    kemasKiniPratontonSumber();
   }
 
   function kemasKiniPratontonSumber() {
     const terbelanja = kiraTerbelanjaMengikutSumber();
-    document.querySelectorAll('#senaraiSumberKewangan input[data-sumber]').forEach(inp => {
-      const nama = inp.getAttribute('data-sumber');
-      const masuk = parseFloat(inp.value) || 0;
-      danaMasukSumber[nama] = masuk;
-      const keluar = Number(terbelanja[nama]) || 0;
-      const baki = masuk - keluar;
-      const kad = inp.closest('.sumber-card');
-      if (kad) {
-        const labelBaki = kad.querySelector('.sumber-baki');
-        if (labelBaki) {
-          labelBaki.textContent = `Baki: RM ${baki.toFixed(2)}`;
-          labelBaki.className = baki < 0 ? 'sumber-baki negatif' : 'sumber-baki';
-        }
+    SENARAI_SUMBER_UTAMA.forEach((nama, i) => {
+      const inp = document.getElementById('dana_' + i);
+      const modalAsas = inp ? (parseFloat(inp.value) || 0) : (Number(danaMasukSumber[nama]) || 0);
+      const baki = modalAsas + jumlahTambahan(nama) - (Number(terbelanja[nama]) || 0);
+      const lbl = document.getElementById('baki_' + i);
+      if (lbl) {
+        lbl.textContent = `Baki: RM ${baki.toFixed(2)}`;
+        lbl.className = baki < 0 ? 'sumber-baki negatif' : 'sumber-baki';
       }
     });
   }
 
   async function simpanDanaSumber() {
-    kemasKiniPratontonSumber();
-    const senaraiPayload = SENARAI_SUMBER_UTAMA.map(nama => ({
-      sumber: nama,
-      danaMasuk: Number(danaMasukSumber[nama]) || 0
-    }));
+    // Semak: baris yang ada jumlah mesti ada sumber modal
+    for (const nama of SENARAI_SUMBER_UTAMA) {
+      for (const b of tambahanModal[nama]) {
+        if ((parseFloat(b.jumlah) || 0) !== 0 && !String(b.sumber).trim()) {
+          tunjukStatus('statusSumber', `Sila isi "Sumber Modal" untuk ${nama}.`, 'err');
+          return;
+        }
+      }
+    }
 
-    const btn = document.getElementById('btnSimpanSumber');
-    btn.disabled = true;
-    tunjukStatus('statusSumber', 'Menyimpan dana masuk sumber ke Google Sheets...', 'wait');
+    const butiranModal = [];
+    const senaraiPayload = SENARAI_SUMBER_UTAMA.map((nama, i) => {
+      const inp = document.getElementById('dana_' + i);
+      const modalAsas = inp ? (parseFloat(inp.value) || 0) : (Number(danaMasukSumber[nama]) || 0);
+      tambahanModal[nama].forEach(b => {
+        const j = parseFloat(b.jumlah) || 0;
+        if (j !== 0) {
+          butiranModal.push({
+            tarikh: dapatTarikhSemasaTempatan(),
+            sumberDana: nama,
+            sumberModal: String(b.sumber).trim(),
+            jumlah: j
+          });
+        }
+      });
+      return { sumber: nama, danaMasuk: Number((modalAsas + jumlahTambahan(nama)).toFixed(2)) };
+    });
+
+    const btns = document.querySelectorAll('.btn-kemaskini');
+    btns.forEach(b => b.disabled = true);
+    tunjukStatus('statusSumber', 'Mengemas kini modal ke Google Sheets...', 'wait');
 
     try {
-      await panggilSheetsPOST({ action: 'saveSumber', sumberDana: senaraiPayload });
+      await panggilSheetsPOST({ action: 'saveSumber', sumberDana: senaraiPayload, butiranModal: butiranModal });
+      senaraiPayload.forEach(p => { danaMasukSumber[p.sumber] = p.danaMasuk; });
+      SENARAI_SUMBER_UTAMA.forEach(n => { tambahanModal[n] = [{ sumber: '', jumlah: '' }]; });
       paparKadSumberKewangan();
-      tunjukStatus('statusSumber', 'Dana masuk sumber & baki terkini berjaya disimpan ke Google Sheets.');
+      tunjukStatus('statusSumber', 'Modal & baki terkini berjaya dikemas kini.');
     } catch (err) {
-      tunjukStatus('statusSumber', 'Gagal menyimpan dana sumber: ' + err.message, 'err');
+      tunjukStatus('statusSumber', 'Gagal mengemas kini: ' + err.message, 'err');
     } finally {
-      btn.disabled = false;
+      document.querySelectorAll('.btn-kemaskini').forEach(b => b.disabled = false);
     }
   }
+
+  // ===== Akhir bahagian Sumber Kewangan =====
 
   window.onload = function() {
     const hariIni = dapatTarikhSemasaTempatan();
