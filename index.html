@@ -66,6 +66,15 @@
     outline: none;
     border-color: #0d6efd;
   }
+  select:required:invalid { color: #9aa0a6; }
+  select option { color: #1c1e21; }
+  input[type="date"] {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 46px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
   .item-box {
     background: #f8f9fa;
     padding: 12px;
@@ -166,21 +175,70 @@
     border-color: #ffe69c;
   }
 
-  .modal-head, .modal-row {
-    display: grid;
-    grid-template-columns: 22px 1fr 95px 26px;
-    gap: 6px;
-    align-items: center;
-    margin-bottom: 6px;
+  .adj-wrap {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #dee2e6;
   }
-  .modal-head {
-    font-size: 11px;
+  .adj-wrap input {
+    margin-bottom: 0;
+    padding: 8px 10px;
+    font-size: 14px;
+    background-color: #fff5f5;
+    border-color: #f5c2c7;
+  }
+  .modal-row {
+    display: grid;
+    grid-template-columns: 22px 1fr 96px;
+    gap: 4px 6px;
+    align-items: end;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f3ead0;
+  }
+  .modal-row input { margin-bottom: 0; }
+  .modal-no { font-size: 13px; font-weight: 700; color: #495057; }
+  .mf { min-width: 0; }
+  .mini {
+    display: block;
+    font-size: 10px;
     font-weight: 700;
     color: #6c757d;
     text-transform: uppercase;
+    margin-bottom: 2px;
   }
-  .modal-no { font-size: 13px; font-weight: 700; color: #495057; }
-  .modal-row input { margin-bottom: 0; }
+  .modal-x { justify-self: end; align-self: center; }
+  .sejarah-box {
+    background: #f0f8f3;
+    border: 1px solid #cfe8d8;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+  .sejarah-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #198754;
+    margin-bottom: 6px;
+  }
+  .sejarah-row {
+    display: grid;
+    grid-template-columns: 22px 58px 1fr auto 22px;
+    gap: 6px;
+    align-items: center;
+    font-size: 12px;
+    padding: 3px 0;
+    border-bottom: 1px dotted #cfe8d8;
+  }
+  .sejarah-tarikh { color: #6c757d; }
+  .sejarah-sumber { font-weight: 600; word-break: break-word; }
+  .sejarah-jumlah { font-weight: 700; color: #198754; text-align: right; }
+  .sejarah-nota {
+    font-size: 10px;
+    color: #6c757d;
+    margin-top: 6px;
+  }
   .btn-plus-modal {
     width: 100%;
     padding: 7px;
@@ -616,9 +674,21 @@
   };
   const kategoriDikecualikan = new Set();
 
-  // Baris tambahan modal (lebih daripada satu) bagi setiap sumber utama
+  function barisKosong() {
+    return { tarikh: dapatTarikhSemasaTempatan(), sumber: '', jumlah: '' };
+  }
+
+  // tambahanModal  = baris yang sedang ditaip (belum dikemas kini)
+  // sejarahModal   = modal yang sudah dikemas kini (disimpan dalam tab "Modal" di Google Sheets)
+  // adjustmentSumber = nilai yang ditolak daripada baki (disimpan dalam tab "Sumber")
   const tambahanModal = {};
-  SENARAI_SUMBER_UTAMA.forEach(n => { tambahanModal[n] = [{ sumber: '', jumlah: '' }]; });
+  const sejarahModal = {};
+  const adjustmentSumber = {};
+  SENARAI_SUMBER_UTAMA.forEach(n => {
+    tambahanModal[n] = [barisKosong()];
+    sejarahModal[n] = [];
+    adjustmentSumber[n] = '';
+  });
 
   function dapatSumberDitolak(jenisSumber) {
     const teks = String(jenisSumber || '').trim().toUpperCase();
@@ -648,14 +718,16 @@
     return bersih || 'LAIN-LAIN';
   }
 
-  function janaPilihanKategoriHTML(terpilih = 'BILL') {
-    return SENARAI_KATEGORI.map(k =>
+  function janaPilihanKategoriHTML(terpilih = '') {
+    const placeholder = `<option value="" disabled hidden${terpilih === '' ? ' selected' : ''}>Masukkan Kategori</option>`;
+    return placeholder + SENARAI_KATEGORI.map(k =>
       `<option value="${k}"${k === terpilih ? ' selected' : ''}>${k}</option>`
     ).join('');
   }
 
-  function janaPilihanSumberHTML(terpilih = 'QR MBB ABAH') {
-    return PILIHAN_JENIS_SUMBER.map(p =>
+  function janaPilihanSumberHTML(terpilih = '') {
+    const placeholder = `<option value="" disabled hidden${terpilih === '' ? ' selected' : ''}>Masukkan Sumber</option>`;
+    return placeholder + PILIHAN_JENIS_SUMBER.map(p =>
       `<option value="${p.label}"${p.label === terpilih ? ' selected' : ''}>${p.label}</option>`
     ).join('');
   }
@@ -668,13 +740,13 @@
         <label>Kategori ${nombor}</label>
         ${bolehBuang ? `<button type="button" class="btn-remove-box" onclick="buangKotakItem(this)">✕ Buang</button>` : ''}
       </div>
-      <select class="input-kategori">${janaPilihanKategoriHTML('BILL')}</select>
+      <select class="input-kategori" required>${janaPilihanKategoriHTML('')}</select>
       <label>Diskripsi ${nombor}</label>
       <input type="text" class="input-diskripsi" placeholder="Masukkan diskripsi ${nombor}">
       <label>Amaun ${nombor} (RM)</label>
       <input type="number" class="input-amaun" inputmode="decimal" placeholder="0.00" oninput="kira()">
       <label>Sumber ${nombor}</label>
-      <select class="input-sumber">${janaPilihanSumberHTML('QR MBB ABAH')}</select>
+      <select class="input-sumber" required>${janaPilihanSumberHTML('')}</select>
     `;
     return div;
   }
@@ -721,10 +793,10 @@
     return terbelanja;
   }
 
-  // ===== Sumber Kewangan & Baki Terkini (versi baharu) =====
+  // ===== Sumber Kewangan & Baki Terkini =====
 
   function esc(t) {
-    return String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    return String(t === undefined || t === null ? '' : t).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
       .replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
@@ -732,16 +804,55 @@
     return tambahanModal[nama].reduce((s, b) => s + (parseFloat(b.jumlah) || 0), 0);
   }
 
+  function dapatAdjustment(nama) {
+    return parseFloat(adjustmentSumber[nama]) || 0;
+  }
+
+  // Baki = Masuk/Modal + tambahan (belum disimpan) - Jumlah Belanja - Adjustment
+  function hitungBaki(nama, modalAsas, keluar) {
+    return modalAsas + jumlahTambahan(nama) - keluar - dapatAdjustment(nama);
+  }
+
   function binaBarisModalHTML(i, nama) {
     return tambahanModal[nama].map((b, j) => `
       <div class="modal-row">
         <span class="modal-no">${j + 1}.</span>
-        <input type="text" placeholder="cth: Gaji / Duit Raya" value="${esc(b.sumber)}"
-          oninput="ubahBarisModal(${i},${j},'sumber',this.value)">
-        <input type="number" step="0.01" inputmode="decimal" placeholder="0.00" value="${esc(b.jumlah)}"
-          oninput="ubahBarisModal(${i},${j},'jumlah',this.value)">
-        <button type="button" class="btn-del-row" onclick="buangBarisModal(${i},${j})">✕</button>
+        <div class="mf">
+          <span class="mini">Tarikh</span>
+          <input type="date" value="${esc(b.tarikh)}"
+            oninput="ubahBarisModal(${i},${j},'tarikh',this.value)">
+        </div>
+        <button type="button" class="btn-del-row modal-x" onclick="buangBarisModal(${i},${j})">✕</button>
+        <span></span>
+        <div class="mf">
+          <span class="mini">Sumber Modal</span>
+          <input type="text" placeholder="cth: Gaji / Duit Raya" value="${esc(b.sumber)}"
+            oninput="ubahBarisModal(${i},${j},'sumber',this.value)">
+        </div>
+        <div class="mf">
+          <span class="mini">Jumlah</span>
+          <input type="number" step="0.01" inputmode="decimal" placeholder="0.00" value="${esc(b.jumlah)}"
+            oninput="ubahBarisModal(${i},${j},'jumlah',this.value)">
+        </div>
       </div>`).join('');
+  }
+
+  function binaSejarahModalHTML(i, nama) {
+    const senarai = sejarahModal[nama];
+    if (!senarai.length) return '';
+    return `
+      <div class="sejarah-box">
+        <div class="sejarah-title">Modal Telah Dimasukkan</div>
+        ${senarai.map((b, j) => `
+          <div class="sejarah-row">
+            <span class="modal-no">${j + 1}.</span>
+            <span class="sejarah-tarikh">${esc(formatTarikhRingkas(b.tarikh))}</span>
+            <span class="sejarah-sumber">${esc(b.sumber)}</span>
+            <span class="sejarah-jumlah">${(Number(b.jumlah) || 0).toFixed(2)}</span>
+            <button type="button" class="btn-del-row" onclick="buangSejarahModal(${i},${j})">✕</button>
+          </div>`).join('')}
+        <div class="sejarah-nota">Tanda ✕ hanya membuang daripada senarai. Jumlah Masuk / Modal kekal.</div>
+      </div>`;
   }
 
   function paparKadSumberKewangan() {
@@ -751,7 +862,7 @@
     bekas.innerHTML = SENARAI_SUMBER_UTAMA.map((nama, i) => {
       const masuk = Number(danaMasukSumber[nama]) || 0;
       const keluar = Number(terbelanja[nama]) || 0;
-      const baki = masuk + jumlahTambahan(nama) - keluar;
+      const baki = hitungBaki(nama, masuk, keluar);
       const kelasBaki = baki < 0 ? 'sumber-baki negatif' : 'sumber-baki';
 
       return `
@@ -767,15 +878,19 @@
                 value="${masuk.toFixed(2)}" oninput="kemasKiniPratontonSumber()">
             </div>
             <div>
-              <label>Terbelanja (RM)</label>
+              <label>Jumlah Belanja</label>
               <div class="sumber-terbelanja-box">RM ${keluar.toFixed(2)}</div>
             </div>
           </div>
+          <div class="adj-wrap">
+            <label>Adjustment (RM) — ditolak daripada baki (tekan KEMASKINI untuk simpan)</label>
+            <input type="number" step="0.01" inputmode="decimal" id="adj_${i}"
+              placeholder="0.00" value="${esc(adjustmentSumber[nama])}"
+              oninput="ubahAdjustment(${i},this.value)">
+          </div>
           <div class="tambah-modal-wrap">
             <label>Tambah Modal Baharu</label>
-            <div class="modal-head">
-              <span>Bil</span><span>Sumber Modal</span><span>Jumlah RM</span><span></span>
-            </div>
+            <div id="sejarah_${i}">${binaSejarahModalHTML(i, nama)}</div>
             <div id="barisModal_${i}">${binaBarisModalHTML(i, nama)}</div>
             <button type="button" class="btn-plus-modal" onclick="tambahBarisModal(${i})">+</button>
             <button type="button" class="btn-action btn-kemaskini" onclick="simpanDanaSumber()">KEMASKINI</button>
@@ -786,14 +901,14 @@
 
   function tambahBarisModal(i) {
     const nama = SENARAI_SUMBER_UTAMA[i];
-    tambahanModal[nama].push({ sumber: '', jumlah: '' });
+    tambahanModal[nama].push(barisKosong());
     document.getElementById('barisModal_' + i).innerHTML = binaBarisModalHTML(i, nama);
   }
 
   function buangBarisModal(i, j) {
     const nama = SENARAI_SUMBER_UTAMA[i];
     tambahanModal[nama].splice(j, 1);
-    if (tambahanModal[nama].length === 0) tambahanModal[nama].push({ sumber: '', jumlah: '' });
+    if (tambahanModal[nama].length === 0) tambahanModal[nama].push(barisKosong());
     document.getElementById('barisModal_' + i).innerHTML = binaBarisModalHTML(i, nama);
     kemasKiniPratontonSumber();
   }
@@ -803,12 +918,35 @@
     kemasKiniPratontonSumber();
   }
 
+  // Buang daripada senarai "Modal Telah Dimasukkan" sahaja (jumlah Masuk / Modal tidak berubah)
+  async function buangSejarahModal(i, j) {
+    const nama = SENARAI_SUMBER_UTAMA[i];
+    const item = sejarahModal[nama][j];
+    if (!item) return;
+    tunjukStatus('statusSumber', 'Membuang daripada senarai modal...', 'wait');
+    try {
+      if (item.id) {
+        await panggilSheetsPOST({ action: 'deleteModal', id: item.id });
+      }
+      sejarahModal[nama].splice(j, 1);
+      document.getElementById('sejarah_' + i).innerHTML = binaSejarahModalHTML(i, nama);
+      tunjukStatus('statusSumber', 'Dibuang daripada senarai. Jumlah Masuk / Modal kekal.');
+    } catch (err) {
+      tunjukStatus('statusSumber', 'Gagal membuang: ' + err.message, 'err');
+    }
+  }
+
+  function ubahAdjustment(i, nilai) {
+    adjustmentSumber[SENARAI_SUMBER_UTAMA[i]] = nilai;
+    kemasKiniPratontonSumber();
+  }
+
   function kemasKiniPratontonSumber() {
     const terbelanja = kiraTerbelanjaMengikutSumber();
     SENARAI_SUMBER_UTAMA.forEach((nama, i) => {
       const inp = document.getElementById('dana_' + i);
       const modalAsas = inp ? (parseFloat(inp.value) || 0) : (Number(danaMasukSumber[nama]) || 0);
-      const baki = modalAsas + jumlahTambahan(nama) - (Number(terbelanja[nama]) || 0);
+      const baki = hitungBaki(nama, modalAsas, Number(terbelanja[nama]) || 0);
       const lbl = document.getElementById('baki_' + i);
       if (lbl) {
         lbl.textContent = `Baki: RM ${baki.toFixed(2)}`;
@@ -836,14 +974,19 @@
         const j = parseFloat(b.jumlah) || 0;
         if (j !== 0) {
           butiranModal.push({
-            tarikh: dapatTarikhSemasaTempatan(),
+            id: 'm' + Date.now() + '-' + Math.floor(Math.random() * 100000),
+            tarikh: b.tarikh || dapatTarikhSemasaTempatan(),
             sumberDana: nama,
             sumberModal: String(b.sumber).trim(),
             jumlah: j
           });
         }
       });
-      return { sumber: nama, danaMasuk: Number((modalAsas + jumlahTambahan(nama)).toFixed(2)) };
+      return {
+        sumber: nama,
+        danaMasuk: Number((modalAsas + jumlahTambahan(nama)).toFixed(2)),
+        adjustment: dapatAdjustment(nama)
+      };
     });
 
     const btns = document.querySelectorAll('.btn-kemaskini');
@@ -853,7 +996,13 @@
     try {
       await panggilSheetsPOST({ action: 'saveSumber', sumberDana: senaraiPayload, butiranModal: butiranModal });
       senaraiPayload.forEach(p => { danaMasukSumber[p.sumber] = p.danaMasuk; });
-      SENARAI_SUMBER_UTAMA.forEach(n => { tambahanModal[n] = [{ sumber: '', jumlah: '' }]; });
+
+      // Modal baharu dikekalkan dalam senarai "Modal Telah Dimasukkan"
+      butiranModal.forEach(b => {
+        sejarahModal[b.sumberDana].push({ id: b.id, tarikh: b.tarikh, sumber: b.sumberModal, jumlah: b.jumlah });
+      });
+
+      SENARAI_SUMBER_UTAMA.forEach(n => { tambahanModal[n] = [barisKosong()]; });
       paparKadSumberKewangan();
       tunjukStatus('statusSumber', 'Modal & baki terkini berjaya dikemas kini.');
     } catch (err) {
@@ -999,6 +1148,23 @@
         const nama = String(item.sumber || '').trim().toUpperCase();
         if (nama && danaMasukSumber[nama] !== undefined) {
           danaMasukSumber[nama] = Number(item.danaMasuk) || 0;
+          const adj = Number(item.adjustment) || 0;
+          adjustmentSumber[nama] = adj !== 0 ? String(adj) : '';
+        }
+      });
+    }
+
+    if (Array.isArray(res.modalHistory)) {
+      SENARAI_SUMBER_UTAMA.forEach(n => { sejarahModal[n] = []; });
+      res.modalHistory.forEach(m => {
+        const nama = String(m.sumberDana || '').trim().toUpperCase();
+        if (sejarahModal[nama]) {
+          sejarahModal[nama].push({
+            id: String(m.id),
+            tarikh: normalisasiTarikhISO(m.tarikh),
+            sumber: String(m.sumber || ''),
+            jumlah: Number(m.jumlah) || 0
+          });
         }
       });
     }
@@ -1045,13 +1211,18 @@
     const kumpulanBelanja = document.querySelectorAll('.belanja-group');
     const itemUntukDihantar = [];
 
+    let ralatPilihan = '';
     kumpulanBelanja.forEach((kumpulan, idx) => {
-      const kategori = normalisasiNamaKategori(kumpulan.querySelector('.input-kategori').value);
+      const kategoriMentah = kumpulan.querySelector('.input-kategori').value;
+      const kategori = normalisasiNamaKategori(kategoriMentah);
       const diskripsi = kumpulan.querySelector('.input-diskripsi').value.trim();
       const amaun = parseFloat(kumpulan.querySelector('.input-amaun').value) || 0;
-      const sumber = String(kumpulan.querySelector('.input-sumber').value || 'TUNAI').trim().toUpperCase();
+      const sumberMentah = kumpulan.querySelector('.input-sumber').value;
+      const sumber = String(sumberMentah || 'TUNAI').trim().toUpperCase();
 
       if (diskripsi !== '' || amaun > 0) {
+        if (!kategoriMentah && !ralatPilihan) ralatPilihan = `Sila pilih Kategori ${idx + 1}.`;
+        if (!sumberMentah && !ralatPilihan) ralatPilihan = `Sila pilih Sumber ${idx + 1}.`;
         itemUntukDihantar.push({
           id: `${Date.now()}-${idx}-${Math.floor(Math.random() * 10000)}`,
           tarikh: tarikh,
@@ -1062,6 +1233,11 @@
         });
       }
     });
+
+    if (ralatPilihan) {
+      tunjukStatus('statusBorang', ralatPilihan, 'err');
+      return;
+    }
 
     if (itemUntukDihantar.length === 0) {
       tunjukStatus('statusBorang', 'Tiada diskripsi atau amaun diisi untuk disimpan.', 'err');
