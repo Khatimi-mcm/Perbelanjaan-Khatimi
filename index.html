@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e3a8a">
 <title>Perbelanjaan Khatimi</title>
 <style>
   body {
@@ -471,6 +472,104 @@
     color: #664d03;
     display: block;
   }
+
+  /* ===== Tema profesional (override) ===== */
+  :root {
+    --primary: #1d4ed8; --primary-soft: #e8efff; --primary-line: #c7d7fe;
+    --ok: #15803d; --ok-soft: #e6f4ea;
+    --danger: #b91c1c; --danger-soft: #fdecec;
+    --warn: #b45309;
+    --ink: #111827; --muted: #6b7280; --line: #e5e7eb; --bg: #f3f5f9;
+  }
+  body { background: var(--bg); color: var(--ink); padding: 14px 12px 40px; -webkit-text-size-adjust: 100%; }
+  .container { background: transparent; box-shadow: none; padding: 0; max-width: 520px; }
+  .app-title {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #fff; border: none; border-radius: 16px;
+    padding: 18px 16px; font-size: 18px; letter-spacing: 1.2px;
+    margin-bottom: 14px; box-shadow: 0 6px 18px rgba(37,99,235,.25);
+  }
+  .app-title::after {
+    content: "Rekod & pantau perbelanjaan harian";
+    display: block; font-size: 11px; font-weight: 500;
+    letter-spacing: .3px; text-transform: none; opacity: .85; margin-top: 4px;
+  }
+  .card, #bahagianLaporan {
+    background: #fff; border: 1px solid var(--line); border-radius: 16px;
+    padding: 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(16,24,40,.06);
+  }
+  #bahagianLaporan { margin-top: 0; }
+  h2 {
+    font-size: 13px; letter-spacing: .8px; color: var(--ink);
+    border: none; border-left: 4px solid var(--primary);
+    padding: 0 0 0 10px; margin: 18px 0 10px; line-height: 1.2;
+  }
+  h2.section-first, .card > h2:first-child, #bahagianLaporan > h2:first-child { margin-top: 0; }
+  label { font-size: 12px; color: var(--muted); }
+  input, select {
+    border: 1px solid #d1d5db; border-radius: 10px; min-height: 46px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+  .item-box { background: #f9fafb; border: 1px solid var(--line); border-left: 4px solid var(--primary-line); border-radius: 12px; }
+  .btn-remove-box { background: var(--danger-soft); color: var(--danger); border-color: #f5b5b5; }
+  .btn-plus, .btn-plus-modal { border-radius: 10px; }
+  .btn-plus { color: var(--primary); background: var(--primary-soft); border-color: var(--primary); }
+  .summary-box { background: var(--primary-soft); border: 1px solid var(--primary-line); border-radius: 12px; }
+  .jumlah-belanja { color: #1e3a8a; font-size: 17px; }
+
+  .btn-action {
+    border-radius: 12px; font-weight: 700; letter-spacing: .2px; padding: 14px;
+    transition: transform .06s, filter .15s;
+  }
+  .btn-action:active { transform: scale(.985); filter: brightness(.95); }
+  .btn-save { background: var(--ok); box-shadow: 0 3px 10px rgba(21,128,61,.25); }
+  .btn-reset { background: #fff; color: #374151; border: 1px solid #d1d5db; }
+  .btn-report { background: var(--primary-soft); color: var(--primary); border: 1px solid var(--primary-line); }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .btn-row .btn-action { margin-top: 0; font-size: 14px; }
+  .btn-refresh { background: var(--primary-soft); color: var(--primary); border: 1px solid var(--primary-line); }
+  .btn-copy { background: var(--primary); color: #fff; }
+  .btn-dedup { background: #fff; color: var(--warn); border: 1px solid #f5d0a6; font-size: 13px; }
+  .btn-delete-range { background: #fff; color: var(--danger); border: 1px solid #f5b5b5; font-size: 13px; }
+  .btn-kemaskini { background: var(--ok); }
+  .btn-preset { border-radius: 999px; background: #fff; border-color: var(--primary-line); }
+  .btn-preset:active { background: var(--primary-soft); }
+
+  .overview { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .ov-item { background: #f9fafb; border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; }
+  .ov-baki { grid-column: 1 / -1; background: var(--ok-soft); border-color: #bde3c9; }
+  .ov-baki.negatif { background: var(--danger-soft); border-color: #f5b5b5; }
+  .ov-label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin: 0 0 4px; }
+  .ov-value { display: block; font-size: 14px; font-weight: 800; white-space: nowrap; }
+  .ov-baki .ov-value { font-size: 20px; color: var(--ok); }
+  .ov-baki.negatif .ov-value { color: var(--danger); }
+
+  .sumber-card {
+    background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--primary);
+    border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,.04); margin-bottom: 12px;
+  }
+  .sumber-nama { color: var(--ink); letter-spacing: .3px; }
+  .sumber-baki { background: var(--ok-soft); color: var(--ok); padding: 4px 10px; border-radius: 999px; font-size: 13px; }
+  .sumber-baki.negatif { background: var(--danger-soft); color: var(--danger); }
+  .sumber-terbelanja-box { background: #f9fafb; border-radius: 10px; }
+  .adj-wrap, .tambah-modal-wrap { border-top: 1px solid var(--line); }
+  .modal-row { border-bottom-color: var(--line); }
+
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; margin-top: 12px; }
+  .table-wrap table { margin-top: 0; min-width: 540px; font-size: 12px; border-collapse: separate; border-spacing: 0; }
+  .table-wrap th, .table-wrap td { border: none; border-bottom: 1px solid var(--line); padding: 9px 8px; }
+  .table-wrap th { background: #f3f4f6; color: var(--muted); font-size: 10px; letter-spacing: .5px; }
+  .table-wrap tbody tr:nth-child(even) { background: #fafafa; }
+  .table-wrap tbody tr.total-row { background: var(--primary-soft); }
+  .table-wrap td.text-right, .cat-summary-table td.text-right { font-variant-numeric: tabular-nums; }
+  .cat-summary-box { background: #f9fafb; border-radius: 12px; border-color: var(--line); }
+  .cat-summary-table th, .cat-summary-table td { border-color: var(--line); }
+
+  .status-box { border-radius: 10px; border-left: 4px solid transparent; font-size: 13px; }
+  .status-ok { background: #ecfdf3; color: #166534; border-left-color: #22c55e; }
+  .status-err { background: var(--danger-soft); color: #991b1b; border-left-color: #ef4444; }
+  .status-wait { background: #fffbeb; color: #92400e; border-left-color: #f59e0b; }
 </style>
 </head>
 <body>
@@ -478,6 +577,7 @@
 <div class="container">
   <h1 class="app-title">PERBELANJAAN KHATIMI</h1>
 
+  <section class="card">
   <h2 class="section-first">Tarikh</h2>
   <input type="date" id="tarikh">
 
@@ -493,14 +593,27 @@
   </div>
 
   <button type="button" id="btnSimpan" class="btn-action btn-save" onclick="simpanRekod()">Simpan Rekod</button>
-  <button type="button" class="btn-action btn-reset" onclick="resetBorang(true)">Kosongkan Semua</button>
-  <button type="button" class="btn-action btn-report" onclick="bukaLaporan()">Laporan</button>
+  <div class="btn-row">
+    <button type="button" class="btn-action btn-reset" onclick="resetBorang(true)">Kosongkan Semua</button>
+    <button type="button" class="btn-action btn-report" onclick="bukaLaporan()">Laporan</button>
+  </div>
 
   <div id="statusBorang" class="status-box"></div>
+  </section>
 
+  <section class="card">
   <h2>Sumber Kewangan &amp; Baki Terkini</h2>
+  <div class="overview">
+    <div class="ov-item ov-baki" id="ovBakiKotak">
+      <span class="ov-label">Jumlah Baki Keseluruhan</span>
+      <span class="ov-value" id="ovBaki">RM 0.00</span>
+    </div>
+    <div class="ov-item"><span class="ov-label">Jumlah Modal</span><span class="ov-value" id="ovModal">RM 0.00</span></div>
+    <div class="ov-item"><span class="ov-label">Jumlah Belanja</span><span class="ov-value" id="ovBelanja">RM 0.00</span></div>
+  </div>
   <div id="senaraiSumberKewangan"></div>
   <div id="statusSumber" class="status-box"></div>
+  </section>
 
   <div id="bahagianLaporan">
     <h2>Laporan Perbelanjaan</h2>
@@ -577,6 +690,7 @@
       Muat Semula Data Google Sheets
     </button>
 
+    <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -591,6 +705,7 @@
       </thead>
       <tbody id="isiJadual"></tbody>
     </table>
+    </div>
 
     <div id="ringkasanKategori" class="cat-summary-box" style="display: none;">
       <div class="cat-summary-header">
@@ -617,13 +732,14 @@
       Salin Teks Laporan
     </button>
 
-    <button type="button" class="btn-action btn-dedup" onclick="buangDataBertindih()">
-      Buang Data Bertindih
-    </button>
-
-    <button type="button" class="btn-action btn-delete-range" onclick="padamRekodMengikutTarikh()">
-      Padam Rekod (Dari - Hingga)
-    </button>
+    <div class="btn-row">
+      <button type="button" class="btn-action btn-dedup" onclick="buangDataBertindih()">
+        Buang Data Bertindih
+      </button>
+      <button type="button" class="btn-action btn-delete-range" onclick="padamRekodMengikutTarikh()">
+        Padam Rekod (Dari - Hingga)
+      </button>
+    </div>
 
     <div id="statusLaporan" class="status-box"></div>
   </div>
@@ -897,6 +1013,25 @@
           </div>
         </div>`;
     }).join('');
+    kemasKiniRingkasanBaki();
+  }
+
+  function kemasKiniRingkasanBaki() {
+    const terbelanja = kiraTerbelanjaMengikutSumber();
+    let modal = 0, belanja = 0, adj = 0;
+    SENARAI_SUMBER_UTAMA.forEach((nama, i) => {
+      const inp = document.getElementById('dana_' + i);
+      modal += (inp ? (parseFloat(inp.value) || 0) : (Number(danaMasukSumber[nama]) || 0)) + jumlahTambahan(nama);
+      belanja += Number(terbelanja[nama]) || 0;
+      adj += dapatAdjustment(nama);
+    });
+    const baki = modal - belanja - adj;
+    const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+    set('ovModal', 'RM ' + modal.toFixed(2));
+    set('ovBelanja', 'RM ' + belanja.toFixed(2));
+    set('ovBaki', 'RM ' + baki.toFixed(2));
+    const kotak = document.getElementById('ovBakiKotak');
+    if (kotak) kotak.classList.toggle('negatif', baki < 0);
   }
 
   function tambahBarisModal(i) {
@@ -953,6 +1088,7 @@
         lbl.className = baki < 0 ? 'sumber-baki negatif' : 'sumber-baki';
       }
     });
+    kemasKiniRingkasanBaki();
   }
 
   async function simpanDanaSumber() {
@@ -1521,6 +1657,7 @@
   }
 
   async function padamSatuRekod(idSasaran) {
+    if (!confirm('Padam rekod ini daripada Google Sheets?')) return;
     tunjukStatus('statusLaporan', 'Memadam rekod dalam Google Sheets...', 'wait');
     try {
       await panggilSheetsPOST({ action: 'deleteOne', id: idSasaran });
@@ -1534,6 +1671,7 @@
   }
 
   async function buangDataBertindih() {
+    if (!confirm('Buang semua data bertindih daripada Google Sheets?')) return;
     tunjukStatus('statusLaporan', 'Menyemak data bertindih dalam Google Sheets...', 'wait');
     try {
       const hasil = await panggilSheetsPOST({ action: 'dedup' });
@@ -1564,6 +1702,7 @@
       return;
     }
 
+    if (!confirm(`Padam SEMUA rekod dari ${dari} hingga ${hingga}? Tindakan ini tidak boleh dibatalkan.`)) return;
     tunjukStatus('statusLaporan', `Memadam rekod dari ${dari} hingga ${hingga}...`, 'wait');
     try {
       const hasil = await panggilSheetsPOST({ action: 'deleteRange', dari: dari, hingga: hingga });
